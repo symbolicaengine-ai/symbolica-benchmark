@@ -1,0 +1,26 @@
+rules:
+  # S4: Workflow Rules (multi-step approval)
+  - id: "eligibility_check"
+    priority: 70
+    condition: "age is not None and credit_score is not None and age >= 18 and credit_score >= 650"
+    actions:
+      eligibility_passed: true
+    tags: ["workflow", "eligibility"]
+
+  - id: "risk_assessment"
+    priority: 65
+    condition: "eligibility_passed == true and debt_to_income_ratio is not None and debt_to_income_ratio < 0.4"
+    actions:
+      risk_level: "low"
+      manager_review_required: false
+    tags: ["workflow", "risk"]
+
+  - id: "final_approval"
+    priority: 60
+    condition: "eligibility_passed == true and risk_level == 'low'"
+    actions:
+      approved: true
+      approval_level: "standard"
+      risk_level: "low"
+      manager_review_required: false
+    tags: ["workflow", "approval"] 

@@ -1,0 +1,10 @@
+rules:
+  # S3: Temporal Rules (fraud detection)
+  - id: "sustained_high_spending_fraud"
+    priority: 85
+    condition: "len(recent_transactions) >= 5 and min(recent_transactions) > 200 and time_window_minutes <= 60"
+    actions:
+      fraud_alert: true
+      alert_level: "high"
+      pattern: "sustained_high_spending"
+    tags: ["fraud", "temporal"] 

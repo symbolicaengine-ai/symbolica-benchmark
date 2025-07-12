@@ -1,0 +1,17 @@
+rules:
+  # S1: Pure Symbolic Rules
+  - id: "age_requirement"
+    priority: 100
+    condition: "age is not None and age < 18"
+    actions:
+      eligible: false
+      reason: "underage"
+    tags: ["eligibility", "regulatory"]
+
+  - id: "credit_score_minimum"
+    priority: 90
+    condition: "credit_score is not None and credit_score < 650"
+    actions:
+      approved: false
+      reason: "credit_score_too_low"
+    tags: ["risk", "policy"] 

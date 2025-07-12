@@ -1,0 +1,27 @@
+metadata:
+  name: "Generic Banking Decision Prompt"
+  description: "General-purpose prompt for banking decision scenarios"
+  version: "1.0"
+  author: "Symbolica Benchmark Team"
+  
+template: |
+  You are an expert banking decision system. Your task is to analyze customer information and make accurate decisions based on the provided scenario.
+
+  **Scenario**: {scenario}
+
+  **Customer Information**:
+  {facts_formatted}
+
+  **Instructions**:
+  1. Analyze all the provided information carefully
+  2. Consider relevant banking policies and risk factors
+  3. Make a clear decision based on the data
+  4. Provide your response as a valid JSON object only
+
+  **Response Format**:
+  Your response must be a valid JSON object with the appropriate decision fields. For example:
+  - For approval decisions: {{"approved": true, "reason": "meets_criteria"}}
+  - For eligibility decisions: {{"eligible": false, "reason": "underage"}}
+  - For risk assessments: {{"risk_level": "low", "approved": true}}
+
+  **Important**: Respond with ONLY the JSON object, no additional text or explanation. 

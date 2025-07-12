@@ -1,0 +1,19 @@
+id: "sentiment_with_eligibility"
+description: "Approve loan applications with positive feedback and basic eligibility"
+category: "hybrid_approval"
+scenario: |
+  Bank offers expedited approval for customers who express positive sentiment
+  AND meet basic eligibility criteria (age 18+, credit score 600+).
+facts:
+  age: 25
+  credit_score: 680
+  feedback: "I'm excited about this loan opportunity and really trust your bank!"
+  income: 50000
+expected_decision:
+  approved: true
+  approval_type: "expedited"
+  sentiment: "positive"
+ground_truth: |
+  Customer meets eligibility (age 25 >= 18, credit 680 >= 600) and
+  expresses clear positive sentiment ("excited", "trust").
+difficulty: "medium" 

@@ -1,0 +1,10 @@
+rules:
+  # S2: Hybrid Rules (using PROMPT for sentiment)
+  - id: "positive_sentiment_expedited"
+    priority: 95
+    condition: "feedback is not None and age >= 18 and credit_score >= 600 and PROMPT('Analyze the sentiment of this text and respond with exactly one word in lowercase: positive, negative, or neutral. Text: {feedback}') == 'positive'"
+    actions:
+      approved: true
+      approval_type: "expedited"
+      sentiment: "positive"
+    tags: ["hybrid", "sentiment"] 
