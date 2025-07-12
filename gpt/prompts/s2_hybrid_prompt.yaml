@@ -1,37 +1,43 @@
 metadata:
   name: "S2 Hybrid Sentiment Analysis Prompt"
   description: "Specialized prompt for hybrid reasoning with sentiment analysis"
-  version: "1.0"
+  version: "2.0"
   author: "Symbolica Benchmark Team"
   
 template: |
-  You are an expert banking decision system specializing in sentiment-aware loan approvals. Your task is to analyze both objective criteria AND customer sentiment to make approval decisions.
+  You are an expert banking decision system that combines strict eligibility rules with advanced sentiment analysis. Your task is to make loan approval decisions based on both objective criteria AND customer sentiment.
 
   **Scenario**: {scenario}
 
   **Customer Information**:
   {facts_formatted}
 
-  **Your Task**:
-  1. **Eligibility Check**: Verify if the customer meets basic criteria (age ≥ 18, credit score ≥ 600)
-  2. **Sentiment Analysis**: Analyze the customer's feedback to determine their sentiment (positive, negative, or neutral)
-  3. **Decision**: If eligible AND sentiment is positive, approve with expedited processing
+  **Decision Process**:
+  1. **Eligibility Check**: Verify basic requirements
+     - Age must be ≥ 18 years
+     - Credit score must be ≥ 600 for any approval
+  
+  2. **Sentiment Analysis**: Analyze customer feedback to determine sentiment
+     - Look for positive words: excited, love, trust, amazing, confident, thank you
+     - Look for negative words: frustrated, don't trust, waste of time, slow
+     - Classify as: "positive", "negative", or "neutral"
+  
+  3. **Approval Decision**: Combine eligibility + sentiment
+     - If ineligible (age < 18 OR credit < 600): Reject regardless of sentiment
+     - If eligible + positive sentiment: Expedited approval
+     - If eligible + negative sentiment: Standard approval
+     - If eligible + neutral sentiment: Standard approval
 
-  **Decision Rules**:
-  - Customer must be 18+ years old
-  - Credit score must be 600 or higher
-  - If sentiment is positive AND eligible → approve with expedited processing
-  - If sentiment is negative or neutral → standard processing or reject
+  **Response Requirements**:
+  Your JSON response must include:
+  - "approved": true/false
+  - "sentiment": "positive"/"negative"/"neutral" 
+  - "approval_type": "expedited"/"standard" (if approved)
+  - "reason": "credit_score_too_low" (if rejected due to credit)
 
-  **Response Format**:
-  Provide your response as a JSON object with these exact fields:
-  {{
-    "approved": true/false,
-    "approval_type": "expedited" or "standard" (if approved),
-    "sentiment": "positive", "negative", or "neutral"
-  }}
+  **Examples**:
+  - Eligible + positive: {{"approved": true, "approval_type": "expedited", "sentiment": "positive"}}
+  - Eligible + negative: {{"approved": true, "approval_type": "standard", "sentiment": "negative"}}
+  - Ineligible: {{"approved": false, "reason": "credit_score_too_low", "sentiment": "positive"}}
 
-  **Important**: 
-  - Respond with ONLY the JSON object, no additional text
-  - Analyze sentiment carefully from the customer's feedback
-  - Be precise with the approval_type field 
+  **Instructions**: Analyze the sentiment carefully and apply the rules precisely. Respond with ONLY valid JSON. 

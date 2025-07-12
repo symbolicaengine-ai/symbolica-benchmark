@@ -1,0 +1,19 @@
+id: "003_ineligible_positive_sentiment"
+description: "Reject ineligible customer despite positive sentiment"
+category: "hybrid_rejection"
+scenario: |
+  Customer expresses very positive sentiment but fails to meet basic
+  eligibility requirements. Sentiment cannot override hard requirements.
+facts:
+  age: 25
+  credit_score: 580
+  annual_income: 40000
+  feedback: "I absolutely love your bank! You've been so helpful and I'm confident this loan will change my life for the better. Thank you so much!"
+expected_decision:
+  approved: false
+  reason: "credit_score_too_low"
+  sentiment: "positive"
+ground_truth: |
+  Despite very positive sentiment ("love", "helpful", "confident", "thank you"),
+  credit score of 580 is below minimum threshold of 600.
+difficulty: "medium" 

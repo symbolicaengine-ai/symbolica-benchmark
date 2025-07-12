@@ -1,7 +1,0 @@
-expected_verdict,id,latency_ms,suite,trace_exists,verdict,verdict_correct
-{'approved': False},S1-001,1.203875057399273,benchmark,True,{'approved': False},True
-{'approved': True},S1-002,0.92224997933954,benchmark,True,"{'approved': True, 'interest_rate': 0.08}",False
-{'approved': True},S2-001,0.798832974396646,benchmark,True,{},False
-{'requires_manual_review': True},S2-002,0.7419169414788485,benchmark,True,{},False
-{'fraud_alert': True},S3-001,0.9235419565811753,benchmark,True,{},False
-"{'approved': True, 'interest_rate': 0.08}",S4-001,0.9775409707799554,benchmark,True,"{'approved': True, 'interest_rate': 0.08}",True

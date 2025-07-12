@@ -1,0 +1,20 @@
+id: "001_sustained_high_spending"
+description: "Detect fraud pattern from sustained high spending"
+category: "fraud_detection"
+scenario: |
+  Customer shows unusual pattern of sustained high spending over short time period.
+  Multiple transactions above normal threshold trigger fraud alert.
+facts:
+  customer_id: "CUST_001"
+  recent_transactions: [250, 300, 275, 320, 290]
+  time_window_minutes: 45
+  average_transaction: 85
+  account_age_days: 180
+expected_decision:
+  fraud_alert: true
+  alert_level: "high"
+  pattern: "sustained_high_spending"
+ground_truth: |
+  All 5 recent transactions (250-320) are significantly above average (85)
+  and occurred within 45 minutes, indicating potential fraudulent activity.
+difficulty: "medium" 

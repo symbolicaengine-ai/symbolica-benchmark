@@ -1,0 +1,24 @@
+id: "002_manager_review_required"
+description: "Workflow routes to manager review for high-risk case"
+category: "workflow_escalation"
+scenario: |
+  Customer passes eligibility but has elevated risk factors that require
+  manager review before final approval decision.
+facts:
+  age: 26
+  credit_score: 680
+  annual_income: 60000
+  debt_to_income_ratio: 0.45
+  employment_years: 1
+  loan_amount: 40000
+  previous_bankruptcies: 1
+expected_decision:
+  approved: false
+  risk_level: "high"
+  manager_review_required: true
+  eligibility_passed: true
+  escalation_reason: "high_debt_ratio_and_bankruptcy_history"
+ground_truth: |
+  Customer passes eligibility but DTI ratio (0.45 > 0.4) and bankruptcy history
+  trigger manager review requirement, blocking automatic approval.
+difficulty: "complex" 

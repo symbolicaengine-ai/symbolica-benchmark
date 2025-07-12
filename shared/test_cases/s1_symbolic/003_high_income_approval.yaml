@@ -1,0 +1,21 @@
+id: "003_high_income_approval"
+description: "Approve loan for qualified high-income applicant"
+category: "approval"
+scenario: |
+  Applicant meets all basic criteria: age 18+, credit score 650+, and
+  demonstrates strong financial capacity with high income.
+facts:
+  age: 35
+  credit_score: 780
+  annual_income: 120000
+  debt_to_income_ratio: 0.15
+  employment_years: 8
+  employment_status: "full_time"
+expected_decision:
+  approved: true
+  credit_limit: 50000
+  interest_rate: 0.045
+ground_truth: |
+  Applicant exceeds all requirements: age 35 >= 18, credit score 780 >= 650,
+  high income of $120K with low debt ratio (15%) and stable employment.
+difficulty: "simple" 

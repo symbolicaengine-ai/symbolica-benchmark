@@ -1,10 +1,27 @@
 rules:
   # S3: Temporal Rules (fraud detection)
   - id: "sustained_high_spending_fraud"
-    priority: 85
-    condition: "len(recent_transactions) >= 5 and min(recent_transactions) > 200 and time_window_minutes <= 60"
+    priority: 95
+    condition: "recent_transactions is not None and len(recent_transactions) >= 5 and min(recent_transactions) > 200 and time_window_minutes <= 60"
     actions:
       fraud_alert: true
       alert_level: "high"
       pattern: "sustained_high_spending"
-    tags: ["fraud", "temporal"] 
+    tags: ["fraud", "temporal", "high_spending"]
+    
+  - id: "impossible_velocity_fraud"
+    priority: 100
+    condition: "distance_miles is not None and time_between_hours is not None and distance_miles > 1000 and time_between_hours < 6"
+    actions:
+      fraud_alert: true
+      alert_level: "critical"
+      pattern: "impossible_velocity"
+    tags: ["fraud", "temporal", "velocity"]
+    
+  - id: "normal_spending_pattern"
+    priority: 50
+    condition: "recent_transactions is not None and average_transaction is not None and all(abs(t - average_transaction) <= average_transaction * 0.5 for t in recent_transactions) and time_window_minutes >= 120"
+    actions:
+      fraud_alert: false
+      pattern: "normal"
+    tags: ["normal", "temporal"] 

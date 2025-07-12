@@ -14,4 +14,13 @@ rules:
     actions:
       approved: false
       reason: "credit_score_too_low"
-    tags: ["risk", "policy"] 
+    tags: ["risk", "policy"]
+    
+  - id: "high_income_approval"
+    priority: 80
+    condition: "age is not None and credit_score is not None and age >= 18 and credit_score >= 650 and annual_income >= 50000"
+    actions:
+      approved: true
+      credit_limit: "{{ 50000 if annual_income >= 100000 else 25000 }}"
+      interest_rate: "{{ 0.045 if credit_score >= 750 else 0.055 }}"
+    tags: ["approval", "high_income"] 

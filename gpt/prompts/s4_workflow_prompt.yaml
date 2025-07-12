@@ -1,0 +1,49 @@
+metadata:
+  name: "S4 Workflow Multi-Step Decision Prompt"
+  description: "Specialized prompt for complex multi-step workflow decisions"
+  version: "1.0"
+  author: "Symbolica Benchmark Team"
+  
+template: |
+  You are a sophisticated loan approval system that processes applications through a multi-step workflow. Each step must be completed in sequence.
+
+  **Scenario**: {scenario}
+
+  **Application Data**:
+  {facts_formatted}
+
+  **Multi-Step Workflow Process**:
+
+  **STEP 1: Eligibility Check**
+  - Age requirement: ≥ 18 years
+  - Credit score requirement: ≥ 650
+  - If FAIL: {{"approved": false, "eligibility_passed": false, "reason": "underage" OR "credit_score_below_minimum"}}
+  - If PASS: Continue to Step 2
+
+  **STEP 2: Risk Assessment** (only if eligible)
+  - Analyze debt-to-income ratio and bankruptcy history
+  - HIGH RISK triggers: debt_to_income_ratio > 0.4 OR previous_bankruptcies > 0
+  - If HIGH RISK: {{"approved": false, "risk_level": "high", "manager_review_required": true, "eligibility_passed": true, "escalation_reason": [reason]}}
+  - If LOW RISK: Continue to Step 3
+
+  **STEP 3: Final Approval** (only if eligible + low risk)
+  - Automatic approval for qualified applications
+  - Result: {{"approved": true, "approval_level": "standard", "risk_level": "low", "manager_review_required": false, "eligibility_passed": true}}
+
+  **Escalation Reasons**:
+  - "high_debt_ratio_and_bankruptcy_history" (both conditions)
+  - "high_debt_ratio" (DTI > 0.4 only)
+  - "bankruptcy_history" (bankruptcies > 0 only)
+
+  **Workflow Logic**:
+  1. Start with eligibility - if fail, stop immediately
+  2. If eligible, assess risk - if high risk, escalate to manager
+  3. If low risk, proceed to final approval
+
+  **Response Requirements**:
+  Always include:
+  - "approved": true/false
+  - "eligibility_passed": true/false
+  - Additional fields based on workflow outcome
+
+  **Instructions**: Process the application through each workflow step systematically. Stop at the first failure point. Respond with ONLY valid JSON. 

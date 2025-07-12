@@ -1,0 +1,21 @@
+id: "002_geographic_velocity"
+description: "Detect impossible geographic velocity pattern"
+category: "fraud_detection"
+scenario: |
+  Customer shows transactions in geographically distant locations within
+  an impossible timeframe, suggesting card theft or cloning.
+facts:
+  customer_id: "CUST_002"
+  transaction_locations: ["New York, NY", "Los Angeles, CA", "New York, NY"]
+  transaction_times: ["2024-01-15 10:00", "2024-01-15 11:30", "2024-01-15 13:00"]
+  transaction_amounts: [45, 120, 80]
+  distance_miles: 2445
+  time_between_hours: 1.5
+expected_decision:
+  fraud_alert: true
+  alert_level: "critical"
+  pattern: "impossible_velocity"
+ground_truth: |
+  Transactions show customer in NYC at 10:00, LA at 11:30 (2445 miles in 1.5 hours),
+  then back to NYC at 13:00. This is physically impossible.
+difficulty: "complex" 

@@ -1,26 +1,43 @@
 rules:
   # S4: Workflow Rules (multi-step approval)
   - id: "eligibility_check"
-    priority: 70
+    priority: 100
     condition: "age is not None and credit_score is not None and age >= 18 and credit_score >= 650"
     actions:
       eligibility_passed: true
     tags: ["workflow", "eligibility"]
+    
+  - id: "eligibility_failure"
+    priority: 99
+    condition: "age is not None and credit_score is not None and (age < 18 or credit_score < 650)"
+    actions:
+      approved: false
+      eligibility_passed: false
+      reason: "{{ 'underage' if age < 18 else 'credit_score_below_minimum' }}"
+    tags: ["workflow", "rejection"]
 
-  - id: "risk_assessment"
-    priority: 65
-    condition: "eligibility_passed == true and debt_to_income_ratio is not None and debt_to_income_ratio < 0.4"
+  - id: "high_risk_assessment"
+    priority: 90
+    condition: "eligibility_passed == true and debt_to_income_ratio is not None and (debt_to_income_ratio > 0.4 or previous_bankruptcies is not None and previous_bankruptcies > 0)"
+    actions:
+      risk_level: "high"
+      manager_review_required: true
+      approved: false
+      escalation_reason: "{{ 'high_debt_ratio_and_bankruptcy_history' if debt_to_income_ratio > 0.4 and previous_bankruptcies > 0 else ('high_debt_ratio' if debt_to_income_ratio > 0.4 else 'bankruptcy_history') }}"
+    tags: ["workflow", "risk", "escalation"]
+
+  - id: "low_risk_assessment"
+    priority: 85
+    condition: "eligibility_passed == true and debt_to_income_ratio is not None and debt_to_income_ratio <= 0.4 and (previous_bankruptcies is None or previous_bankruptcies == 0)"
     actions:
       risk_level: "low"
       manager_review_required: false
     tags: ["workflow", "risk"]
 
   - id: "final_approval"
-    priority: 60
-    condition: "eligibility_passed == true and risk_level == 'low'"
+    priority: 80
+    condition: "eligibility_passed == true and risk_level == 'low' and manager_review_required == false"
     actions:
       approved: true
       approval_level: "standard"
-      risk_level: "low"
-      manager_review_required: false
     tags: ["workflow", "approval"] 

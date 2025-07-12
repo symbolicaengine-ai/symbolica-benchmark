@@ -1,0 +1,23 @@
+id: "001_full_approval_pipeline"
+description: "Complete loan approval through full workflow pipeline"
+category: "workflow_approval"
+scenario: |
+  Customer application goes through complete multi-step workflow:
+  eligibility check → risk assessment → final approval with terms.
+facts:
+  age: 30
+  credit_score: 750
+  annual_income: 90000
+  debt_to_income_ratio: 0.25
+  employment_years: 5
+  loan_amount: 25000
+expected_decision:
+  approved: true
+  approval_level: "standard"
+  risk_level: "low"
+  manager_review_required: false
+  eligibility_passed: true
+ground_truth: |
+  Customer passes all workflow steps: eligibility (age 30 >= 18, credit 750 >= 650),
+  risk assessment (DTI 0.25 < 0.4), leading to final approval.
+difficulty: "complex" 
