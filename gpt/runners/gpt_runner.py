@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-GPT Baseline Runner
-==================
+GPT Baseline Runner - Multi-Record Support
+==========================================
 
-Dedicated runner for evaluating GPT performance with sophisticated prompt engineering
-for the 12 high-quality benchmark test cases.
+Enhanced runner for evaluating GPT performance consistency across multiple similar records,
+comparing against Symbolica's deterministic reliability.
 """
 
 import time
@@ -17,8 +17,8 @@ from typing import Dict, List, Any, Optional
 import yaml
 
 
-class GPTRunner:
-    """GPT runner with sophisticated prompt engineering for benchmark test cases."""
+class GPTMultiRecordRunner:
+    """GPT runner with multi-record support for consistency testing."""
     
     def __init__(self, model: str = "gpt-4o-mini", prompts_dir: Path = None):
         self.model = model
@@ -41,7 +41,7 @@ class GPTRunner:
         try:
             import openai
             self.client = openai.OpenAI(api_key=api_key)
-            print(f"✓ GPT runner initialized with model: {self.model}")
+            print(f"✓ GPT multi-record runner initialized with model: {self.model}")
         except ImportError:
             raise ImportError("Please install openai: pip install openai")
         
@@ -65,7 +65,7 @@ class GPTRunner:
                 print(f"Warning: Failed to load template {template_file}: {e}")
     
     def run_case(self, case_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute a single test case with GPT."""
+        """Execute a single test case with multiple records through GPT."""
         start_time = time.perf_counter()
         
         try:
@@ -73,51 +73,82 @@ class GPTRunner:
             case_id = case_data["id"]
             suite = self._extract_suite(case_data)
             expected_decision = case_data["expected_decision"]
+            customer_records = case_data["customer_records"]
             
-            # Select and render prompt
-            prompt = self._build_prompt(case_data, suite)
+            # Process each record
+            record_results = []
+            total_tokens_input = 0
+            total_tokens_output = 0
+            total_cost = 0.0
             
-            # Call OpenAI API
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0,  # Deterministic
-                max_tokens=1000
-            )
+            for i, record in enumerate(customer_records):
+                record_start_time = time.perf_counter()
+                
+                # Build prompt for this record
+                prompt = self._build_prompt_for_record(case_data, record, suite)
+                
+                # Call OpenAI API
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0,  # Deterministic
+                    max_tokens=1000
+                )
+                
+                # Calculate record metrics
+                record_latency_ms = (time.perf_counter() - record_start_time) * 1000
+                
+                # Extract response
+                response_text = response.choices[0].message.content
+                decision_actual = self._parse_response(response_text, suite, case_id)
+                
+                # Extract usage stats
+                usage = response.usage
+                tokens_input = usage.prompt_tokens
+                tokens_output = usage.completion_tokens
+                cost_usd = self._calculate_cost(tokens_input, tokens_output)
+                
+                # Update totals
+                total_tokens_input += tokens_input
+                total_tokens_output += tokens_output
+                total_cost += cost_usd
+                
+                # Check correctness
+                decision_correct = self._compare_decisions(expected_decision, decision_actual)
+                
+                record_results.append({
+                    "record_index": i + 1,
+                    "decision_correct": decision_correct,
+                    "expected": expected_decision,
+                    "actual": decision_actual,
+                    "latency_ms": record_latency_ms,
+                    "tokens_input": tokens_input,
+                    "tokens_output": tokens_output,
+                    "cost_usd": cost_usd,
+                    "reasoning": response_text
+                })
             
-            # Calculate metrics
-            latency_ms = (time.perf_counter() - start_time) * 1000
+            # Calculate overall metrics
+            total_latency_ms = (time.perf_counter() - start_time) * 1000
+            consistency_metrics = self._calculate_consistency_metrics(record_results)
             
-            # Extract response
-            response_text = response.choices[0].message.content
-            decision_actual = self._parse_response(response_text, suite, case_id)
-            
-            # Extract usage stats
-            usage = response.usage
-            tokens_input = usage.prompt_tokens
-            tokens_output = usage.completion_tokens
-            cost_usd = self._calculate_cost(tokens_input, tokens_output)
-            
-            # Update stats
-            self.stats['total_calls'] += 1
-            self.stats['total_tokens'] += tokens_input + tokens_output
-            self.stats['total_cost'] += cost_usd
-            
-            # Check correctness
-            decision_correct = self._compare_decisions(expected_decision, decision_actual)
+            # Update global stats
+            self.stats['total_calls'] += len(customer_records)
+            self.stats['total_tokens'] += total_tokens_input + total_tokens_output
+            self.stats['total_cost'] += total_cost
             
             return {
                 "case_id": case_id,
                 "suite": suite,
-                "decision_correct": decision_correct,
-                "expected": expected_decision,
-                "actual": decision_actual,
-                "latency_ms": latency_ms,
-                "tokens_input": tokens_input,
-                "tokens_output": tokens_output,
-                "cost_usd": cost_usd,
-                "reasoning": response_text,
-                "prompt_used": prompt[:200] + "..." if len(prompt) > 200 else prompt,
+                "total_records": len(customer_records),
+                "record_results": record_results,
+                "consistency_metrics": consistency_metrics,
+                "total_latency_ms": total_latency_ms,
+                "avg_latency_ms": total_latency_ms / len(customer_records),
+                "total_tokens_input": total_tokens_input,
+                "total_tokens_output": total_tokens_output,
+                "total_cost_usd": total_cost,
+                "avg_cost_per_record": total_cost / len(customer_records),
                 "error": None
             }
             
@@ -126,15 +157,15 @@ class GPTRunner:
             return {
                 "case_id": case_data.get("id", "unknown"),
                 "suite": self._extract_suite(case_data),
-                "decision_correct": False,
-                "expected": case_data.get("expected_decision", {}),
-                "actual": {},
-                "latency_ms": latency_ms,
-                "tokens_input": 0,
-                "tokens_output": 0,
-                "cost_usd": 0.0,
-                "reasoning": "",
-                "prompt_used": "",
+                "total_records": len(case_data.get("customer_records", [])),
+                "record_results": [],
+                "consistency_metrics": {},
+                "total_latency_ms": latency_ms,
+                "avg_latency_ms": 0,
+                "total_tokens_input": 0,
+                "total_tokens_output": 0,
+                "total_cost_usd": 0.0,
+                "avg_cost_per_record": 0.0,
                 "error": str(e)
             }
     
@@ -149,20 +180,30 @@ class GPTRunner:
             return "s3_temporal"
         elif "pipeline" in case_id or "workflow" in case_id or "approval" in case_id or "review" in case_id or "rejection" in case_id:
             return "s4_workflow"
+        elif "ambiguous" in case_id or "sentiment_analysis" in case_id or "risk_assessment" in case_id:
+            return "generic"
         else:
-            return "unknown"
+            return "generic"
     
-    def _build_prompt(self, case_data: Dict[str, Any], suite: str) -> str:
-        """Build prompt for the given case using templates."""
+    def _build_prompt_for_record(self, case_data: Dict[str, Any], record: Dict[str, Any], suite: str) -> str:
+        """Build prompt for a single record using templates."""
         # Try to use suite-specific template
         template_name = f"{suite}_prompt"
         if template_name in self.templates:
             template = self.templates[template_name]
+            
+            # Format the record data for the template
+            customer_data_formatted = self._format_customer_data(record)
+            facts_formatted = self._format_facts(record)
+            
             return template.format(
-                scenario=case_data.get("scenario", ""),
+                business_problem=case_data.get("business_problem", ""),
+                scenario=case_data.get("business_problem", ""),
                 description=case_data.get("description", ""),
-                facts=case_data["facts"],
-                facts_formatted=self._format_facts(case_data["facts"]),
+                facts=record,
+                facts_formatted=facts_formatted,
+                customer_data=record,
+                customer_data_formatted=customer_data_formatted,
                 case_id=case_data["id"]
             )
         
@@ -170,35 +211,61 @@ class GPTRunner:
         if "generic_prompt" in self.templates:
             template = self.templates["generic_prompt"]
             return template.format(
-                scenario=case_data.get("scenario", ""),
+                business_problem=case_data.get("business_problem", ""),
+                scenario=case_data.get("business_problem", ""),
                 description=case_data.get("description", ""),
-                facts=case_data["facts"],
-                facts_formatted=self._format_facts(case_data["facts"]),
+                facts=record,
+                facts_formatted=self._format_facts(record),
+                customer_data=record,
+                customer_data_formatted=self._format_customer_data(record),
                 case_id=case_data["id"]
             )
         
-        # Ultimate fallback: basic prompt
-        return self._build_basic_prompt(case_data, suite)
-    
-    def _build_basic_prompt(self, case_data: Dict[str, Any], suite: str) -> str:
-        """Build a basic prompt when no templates are available."""
-        scenario = case_data.get("scenario", "")
-        facts = case_data["facts"]
-        facts_str = self._format_facts(facts)
-        
-        return f"""You are a banking decision system. Analyze the following scenario and make a decision.
-
-Scenario: {scenario}
-
-Customer Information:
-{facts_str}
-
-Please provide your decision as a JSON object with the appropriate fields.
-Your response should be valid JSON only, no additional text."""
+        # Ultimate fallback: enhanced prompt with business context
+        return self._build_enhanced_prompt(case_data, record, suite)
     
     def _format_facts(self, facts: Dict[str, Any]) -> str:
         """Format facts for display in prompts."""
         return "\n".join(f"- {k}: {v}" for k, v in facts.items())
+    
+    def _format_customer_data(self, customer_data: Dict[str, Any]) -> str:
+        """Format customer data for display in prompts."""
+        if not customer_data:
+            return ""
+        
+        formatted = []
+        for key, value in customer_data.items():
+            formatted.append(f"{key.replace('_', ' ').title()}: {value}")
+        
+        return "\n".join(formatted)
+    
+    def _build_enhanced_prompt(self, case_data: Dict[str, Any], record: Dict[str, Any], suite: str) -> str:
+        """Build enhanced prompt with full business context when no templates are available."""
+        business_problem = case_data.get("business_problem", "")
+        customer_data_str = self._format_customer_data(record)
+        expected_decision = case_data.get("expected_decision", {})
+        
+        # Get the expected output format from the actual expected decision
+        expected_format = json.dumps(expected_decision, indent=2)
+        
+        return f"""You are an expert banking decision system. Read the complete business problem and make a decision based on the full policy framework.
+
+BUSINESS PROBLEM & POLICY:
+{business_problem}
+
+CUSTOMER APPLICATION:
+{customer_data_str}
+
+INSTRUCTIONS:
+1. Read the complete business policy above carefully
+2. Apply ALL the rules, criteria, and requirements to this customer application
+3. Consider all tiers, regulatory requirements, and rejection criteria
+4. Provide your decision in the EXACT same format as this example:
+
+EXPECTED OUTPUT FORMAT:
+{expected_format}
+
+CRITICAL: Your response must be ONLY a valid JSON object matching the format above. No explanations, just JSON."""
     
     def _parse_response(self, response_text: str, suite: str, case_id: str) -> Dict[str, Any]:
         """Parse GPT response into decision dictionary."""
@@ -229,46 +296,60 @@ Your response should be valid JSON only, no additional text."""
         """Parse response for symbolic reasoning cases."""
         text_lower = text.lower()
         
-        if "001_age" in case_id:
-            # Age verification case
-            if "eligible" in text_lower and ("false" in text_lower or "not" in text_lower):
-                return {"eligible": False, "reason": "underage"}
-            elif "eligible" in text_lower:
-                return {"eligible": True}
+        # Try to extract JSON first
+        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        if json_match:
+            try:
+                return json.loads(json_match.group())
+            except:
+                pass
         
-        elif "002_credit" in case_id:
-            # Credit score case
-            if "approved" in text_lower and ("false" in text_lower or "not" in text_lower or "reject" in text_lower):
-                return {"approved": False, "reason": "credit_score_too_low"}
-            elif "approved" in text_lower:
-                return {"approved": True}
+        # Fallback parsing
+        result = {}
         
-        elif "003_high_income" in case_id:
-            # High income approval case
-            if "approved" in text_lower and ("true" in text_lower or "yes" in text_lower or "approve" in text_lower):
-                result = {"approved": True}
-                # Try to extract credit limit and interest rate
-                if "50000" in text or "50,000" in text:
-                    result["credit_limit"] = 50000
-                elif "25000" in text or "25,000" in text:
-                    result["credit_limit"] = 25000
-                
-                if "0.045" in text or "4.5%" in text:
-                    result["interest_rate"] = 0.045
-                elif "0.055" in text or "5.5%" in text:
-                    result["interest_rate"] = 0.055
-                
-                return result
+        # Extract basic approval/eligibility
+        if "approved" in text_lower:
+            if "false" in text_lower or "not approved" in text_lower:
+                result["approved"] = False
+            else:
+                result["approved"] = True
         
-        # Generic fallback
-        if "approved" in text_lower or "eligible" in text_lower:
-            return {"approved": True, "eligible": True}
-        else:
-            return {"approved": False, "eligible": False}
+        if "eligible" in text_lower:
+            if "false" in text_lower or "not eligible" in text_lower:
+                result["eligible"] = False
+            else:
+                result["eligible"] = True
+        
+        # Extract tier information
+        if "premium" in text_lower:
+            result["tier"] = "premium"
+        elif "standard" in text_lower:
+            result["tier"] = "standard"
+        elif "basic" in text_lower:
+            result["tier"] = "basic"
+        
+        # Extract reason
+        if "underage" in text_lower:
+            result["reason"] = "underage"
+        elif "credit" in text_lower and "low" in text_lower:
+            result["reason"] = "credit_score_too_low"
+        elif "income" in text_lower and "low" in text_lower:
+            result["reason"] = "income_too_low"
+        
+        return result
     
     def _parse_hybrid_response(self, text: str, case_id: str) -> Dict[str, Any]:
         """Parse response for hybrid reasoning cases."""
         text_lower = text.lower()
+        
+        # Try to extract JSON first
+        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        if json_match:
+            try:
+                return json.loads(json_match.group())
+            except:
+                pass
+        
         result = {}
         
         # Extract sentiment
@@ -281,7 +362,7 @@ Your response should be valid JSON only, no additional text."""
         
         # Extract approval status
         if "approved" in text_lower:
-            if "false" in text_lower or "not" in text_lower or "reject" in text_lower:
+            if "false" in text_lower or "not approved" in text_lower:
                 result["approved"] = False
             else:
                 result["approved"] = True
@@ -292,23 +373,32 @@ Your response should be valid JSON only, no additional text."""
         elif "standard" in text_lower:
             result["approval_type"] = "standard"
         
-        # Extract reason for rejection
-        if "credit" in text_lower and ("low" in text_lower or "insufficient" in text_lower):
-            result["reason"] = "credit_score_too_low"
-        
         return result
     
     def _parse_temporal_response(self, text: str, case_id: str) -> Dict[str, Any]:
         """Parse response for temporal reasoning cases."""
         text_lower = text.lower()
+        
+        # Try to extract JSON first
+        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        if json_match:
+            try:
+                return json.loads(json_match.group())
+            except:
+                pass
+        
         result = {}
         
         # Extract fraud alert
-        if "fraud" in text_lower:
-            if "false" in text_lower or "not" in text_lower or "no fraud" in text_lower:
-                result["fraud_alert"] = False
-            else:
+        if "fraud_alert" in text_lower:
+            if "true" in text_lower:
                 result["fraud_alert"] = True
+            else:
+                result["fraud_alert"] = False
+        elif "fraud" in text_lower:
+            result["fraud_alert"] = True
+        else:
+            result["fraud_alert"] = False
         
         # Extract alert level
         if "critical" in text_lower:
@@ -319,12 +409,18 @@ Your response should be valid JSON only, no additional text."""
             result["alert_level"] = "medium"
         elif "low" in text_lower:
             result["alert_level"] = "low"
+        elif "none" in text_lower:
+            result["alert_level"] = "none"
         
         # Extract pattern
         if "sustained" in text_lower and "spending" in text_lower:
             result["pattern"] = "sustained_high_spending"
         elif "velocity" in text_lower or "impossible" in text_lower:
             result["pattern"] = "impossible_velocity"
+        elif "escalation" in text_lower:
+            result["pattern"] = "gradual_escalation"
+        elif "moderate" in text_lower:
+            result["pattern"] = "moderate_risk"
         elif "normal" in text_lower:
             result["pattern"] = "normal"
         
@@ -333,11 +429,20 @@ Your response should be valid JSON only, no additional text."""
     def _parse_workflow_response(self, text: str, case_id: str) -> Dict[str, Any]:
         """Parse response for workflow cases."""
         text_lower = text.lower()
+        
+        # Try to extract JSON first
+        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        if json_match:
+            try:
+                return json.loads(json_match.group())
+            except:
+                pass
+        
         result = {}
         
         # Extract approval status
         if "approved" in text_lower:
-            if "false" in text_lower or "not" in text_lower or "reject" in text_lower:
+            if "false" in text_lower or "not approved" in text_lower:
                 result["approved"] = False
             else:
                 result["approved"] = True
@@ -348,44 +453,22 @@ Your response should be valid JSON only, no additional text."""
         elif "premium" in text_lower:
             result["approval_level"] = "premium"
         
-        # Extract risk level
-        if "low" in text_lower and "risk" in text_lower:
-            result["risk_level"] = "low"
-        elif "medium" in text_lower and "risk" in text_lower:
-            result["risk_level"] = "medium"
-        elif "high" in text_lower and "risk" in text_lower:
-            result["risk_level"] = "high"
-        
-        # Extract manager review
-        result["manager_review_required"] = "manager" in text_lower or "review" in text_lower
-        
-        # Extract eligibility
-        if "eligibility" in text_lower:
-            if "passed" in text_lower or "eligible" in text_lower:
-                result["eligibility_passed"] = True
-            else:
-                result["eligibility_passed"] = False
-        
-        # Extract reasons
-        if "underage" in text_lower:
-            result["reason"] = "underage"
-        elif "credit" in text_lower and ("low" in text_lower or "below" in text_lower):
-            result["reason"] = "credit_score_below_minimum"
-        
-        # Extract escalation reason
-        if "debt" in text_lower and "bankruptcy" in text_lower:
-            result["escalation_reason"] = "high_debt_ratio_and_bankruptcy_history"
-        elif "debt" in text_lower:
-            result["escalation_reason"] = "high_debt_ratio"
-        elif "bankruptcy" in text_lower:
-            result["escalation_reason"] = "bankruptcy_history"
-        
         return result
     
     def _parse_generic_response(self, text: str) -> Dict[str, Any]:
         """Generic response parsing fallback."""
         text_lower = text.lower()
-        if "approved" in text_lower or "eligible" in text_lower or "yes" in text_lower:
+        
+        # Try to extract JSON first
+        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        if json_match:
+            try:
+                return json.loads(json_match.group())
+            except:
+                pass
+        
+        # Basic fallback
+        if "approved" in text_lower and ("true" in text_lower or "yes" in text_lower):
             return {"approved": True}
         else:
             return {"approved": False}
@@ -398,6 +481,55 @@ Your response should be valid JSON only, no additional text."""
             if actual[key] != expected_value:
                 return False
         return True
+    
+    def _calculate_consistency_metrics(self, record_results: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Calculate consistency metrics across multiple records."""
+        if not record_results:
+            return {}
+        
+        # Check if all decisions are correct
+        all_correct = all(r["decision_correct"] for r in record_results)
+        
+        # Check if all actual decisions are identical
+        first_actual = record_results[0]["actual"]
+        all_identical = all(r["actual"] == first_actual for r in record_results)
+        
+        # Calculate correctness percentage
+        correct_count = sum(1 for r in record_results if r["decision_correct"])
+        correctness_percentage = (correct_count / len(record_results)) * 100
+        
+        # Calculate variance in decisions (how many different outputs we got)
+        unique_decisions = set(json.dumps(r["actual"], sort_keys=True) for r in record_results)
+        decision_variance = len(unique_decisions)
+        
+        # Calculate latency statistics
+        latencies = [r["latency_ms"] for r in record_results]
+        avg_latency = sum(latencies) / len(latencies)
+        min_latency = min(latencies)
+        max_latency = max(latencies)
+        latency_variance = sum((l - avg_latency) ** 2 for l in latencies) / len(latencies)
+        
+        # Calculate cost statistics
+        costs = [r["cost_usd"] for r in record_results]
+        avg_cost = sum(costs) / len(costs)
+        total_cost = sum(costs)
+        
+        return {
+            "all_correct": all_correct,
+            "all_identical": all_identical,
+            "correct_count": correct_count,
+            "correctness_percentage": correctness_percentage,
+            "decision_variance": decision_variance,
+            "unique_decisions": len(unique_decisions),
+            "avg_latency_ms": avg_latency,
+            "min_latency_ms": min_latency,
+            "max_latency_ms": max_latency,
+            "latency_variance": latency_variance,
+            "avg_cost_usd": avg_cost,
+            "total_cost_usd": total_cost,
+            "deterministic_performance": all_correct and all_identical,
+            "consistency_score": correctness_percentage * (1 - (decision_variance - 1) / len(record_results))
+        }
     
     def _calculate_cost(self, input_tokens: int, output_tokens: int) -> float:
         """Calculate cost based on token usage and model."""
@@ -421,129 +553,226 @@ def load_test_cases() -> List[Dict[str, Any]]:
     test_cases = []
     test_cases_dir = Path("../../shared/test_cases")
     
-    for yaml_file in test_cases_dir.rglob("*.yaml"):
+    for txt_file in test_cases_dir.rglob("*.txt"):
         try:
-            with yaml_file.open("r") as f:
-                case_data = yaml.safe_load(f)
-                if "id" in case_data and "expected_decision" in case_data:
-                    test_cases.append(case_data)
+            case_data = parse_txt_test_case(txt_file)
+            if case_data and "id" in case_data and "expected_decision" in case_data:
+                test_cases.append(case_data)
         except Exception as e:
-            print(f"Warning: Could not load {yaml_file}: {e}")
+            print(f"Warning: Could not load {txt_file}: {e}")
     
     return sorted(test_cases, key=lambda x: x["id"])
 
+def parse_txt_test_case(txt_file: Path) -> Dict[str, Any]:
+    """Parse a TXT test case file and extract multiple customer records."""
+    with txt_file.open("r") as f:
+        content = f.read()
+    
+    # Extract test case ID
+    id_match = re.search(r'TEST CASE: (\w+)', content)
+    if not id_match:
+        return None
+    
+    case_id = id_match.group(1)
+    
+    # Extract description
+    desc_match = re.search(r'Description: (.+)', content)
+    description = desc_match.group(1) if desc_match else ""
+    
+    # Extract business problem
+    business_problem_match = re.search(r'BUSINESS PROBLEM STATEMENT:\s*-{40}\s*(.+?)\s*CUSTOMER APPLICATION DATA', content, re.DOTALL)
+    business_problem = business_problem_match.group(1).strip() if business_problem_match else ""
+    
+    # Extract multiple customer records
+    customer_records = parse_multiple_customer_records(content)
+    
+    # Extract expected decision
+    expected_decision = parse_expected_decision_from_txt(content)
+    
+    return {
+        "id": case_id,
+        "description": description,
+        "business_problem": business_problem,
+        "customer_records": customer_records,
+        "expected_decision": expected_decision
+    }
+
+def parse_multiple_customer_records(content: str) -> List[Dict[str, Any]]:
+    """Parse multiple customer records from the test case content."""
+    records = []
+    
+    # Find the customer data section
+    customer_data_match = re.search(r'CUSTOMER APPLICATION DATA \(MULTIPLE RECORDS\):\s*-{40}\s*(.+?)\s*EXPECTED SYSTEM DECISION', content, re.DOTALL)
+    if not customer_data_match:
+        return records
+    
+    customer_data_text = customer_data_match.group(1).strip()
+    
+    # Split by record boundaries
+    record_sections = re.split(r'\n\s*Record \d+:', customer_data_text)
+    
+    for i, section in enumerate(record_sections):
+        if i == 0:  # Skip the first empty section
+            continue
+            
+        record_data = {}
+        lines = section.strip().split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if ':' in line and not line.startswith('Application'):
+                key, value = line.split(':', 1)
+                key = key.strip()
+                value = value.strip()
+                
+                # Convert to appropriate types
+                if value.lower() == 'true':
+                    value = True
+                elif value.lower() == 'false':
+                    value = False
+                elif value.lower() == 'none':
+                    value = None
+                elif value.replace('.', '').replace('-', '').isdigit():
+                    if '.' in value:
+                        value = float(value)
+                    else:
+                        value = int(value)
+                elif value.startswith('"') and value.endswith('"'):
+                    value = value[1:-1]  # Remove quotes
+                
+                record_data[key] = value
+        
+        if record_data:
+            records.append(record_data)
+    
+    return records
+
+def parse_expected_decision_from_txt(content: str) -> Dict[str, Any]:
+    """Parse expected decision from the test case content."""
+    expected_match = re.search(r'EXPECTED SYSTEM DECISION \(ALL RECORDS\):\s*-{40}\s*(.+?)\s*GROUND TRUTH', content, re.DOTALL)
+    if not expected_match:
+        return {}
+    
+    expected_text = expected_match.group(1).strip()
+    expected_decision = {}
+    
+    for line in expected_text.split('\n'):
+        line = line.strip()
+        if ':' in line:
+            key, value = line.split(':', 1)
+            key = key.strip()
+            value = value.strip()
+            
+            # Convert to appropriate types
+            if value.lower() == 'true':
+                value = True
+            elif value.lower() == 'false':
+                value = False
+            elif value.lower() == 'none':
+                value = None
+            elif value.replace('.', '').replace('-', '').isdigit():
+                if '.' in value:
+                    value = float(value)
+                else:
+                    value = int(value)
+            elif value.startswith('"') and value.endswith('"'):
+                value = value[1:-1]  # Remove quotes
+            
+            expected_decision[key] = value
+    
+    return expected_decision
 
 def main():
-    """Main evaluation function for GPT runner."""
-    import argparse
+    """Main GPT benchmark execution."""
+    print("🤖 GPT Multi-Record Benchmark - Consistency Testing")
+    print("=" * 60)
     
-    parser = argparse.ArgumentParser(description="GPT Baseline Evaluation")
-    parser.add_argument("--model", default="gpt-4o-mini", help="OpenAI model to use")
-    parser.add_argument("--prompts", type=Path, default=Path("../prompts"), help="Prompts directory")
-    parser.add_argument("--output", type=Path, help="Output file for results")
-    parser.add_argument("--verbose", action="store_true", help="Verbose output")
-    
-    args = parser.parse_args()
-    
-    # Load environment variables
-    try:
-        from dotenv import load_dotenv
-        load_dotenv()
-    except ImportError:
-        pass
-    
-    # Initialize runner
-    runner = GPTRunner(model=args.model, prompts_dir=args.prompts)
+    # Setup runner
+    runner = GPTMultiRecordRunner()
     runner.setup()
     
     # Load test cases
     test_cases = load_test_cases()
-    if not test_cases:
-        print(f"No test cases found")
-        return
-    
     print(f"Found {len(test_cases)} test cases")
     
-    # Run evaluation
+    if len(test_cases) == 0:
+        print("No test cases found!")
+        return
+    
+    # Run tests
     results = []
     total_start = time.time()
+    total_records = 0
     
     for i, case_data in enumerate(test_cases, 1):
-        if args.verbose:
-            print(f"\n[{i:2d}/{len(test_cases)}] Running: {case_data['id']}")
-            print(f"    Description: {case_data['description']}")
+        print(f"\n[{i:2d}/{len(test_cases)}] Running: {case_data['id']}")
+        print(f"    Description: {case_data['description']}")
+        print(f"    Records: {len(case_data['customer_records'])}")
         
         result = runner.run_case(case_data)
         results.append(result)
+        total_records += result["total_records"]
         
-        if args.verbose:
-            if result["decision_correct"]:
-                print(f"    ✓ PASS ({result['latency_ms']:.1f}ms, ${result['cost_usd']:.4f})")
-            else:
-                print(f"    ✗ FAIL ({result['latency_ms']:.1f}ms, ${result['cost_usd']:.4f})")
-                print(f"      Expected: {result['expected']}")
-                print(f"      Actual:   {result['actual']}")
-                if result["error"]:
-                    print(f"      Error:    {result['error']}")
+        # Print result
+        metrics = result["consistency_metrics"]
+        if metrics.get("deterministic_performance", False):
+            print(f"    ✓ DETERMINISTIC ({metrics['correct_count']}/{result['total_records']} correct, {metrics['unique_decisions']} unique, ${metrics['total_cost_usd']:.4f})")
+        elif metrics.get("all_correct", False):
+            print(f"    ✓ ALL CORRECT ({metrics['correct_count']}/{result['total_records']} correct, {metrics['unique_decisions']} unique, ${metrics['total_cost_usd']:.4f})")
+        else:
+            print(f"    ✗ INCONSISTENT ({metrics['correct_count']}/{result['total_records']} correct, {metrics['unique_decisions']} unique, ${metrics['total_cost_usd']:.4f})")
+            
+        if result["error"]:
+            print(f"      Error: {result['error']}")
     
-    # Generate summary
+    # Summary
     total_time = time.time() - total_start
-    total_cases = len(results)
-    correct_cases = sum(1 for r in results if r["decision_correct"])
-    accuracy = correct_cases / total_cases * 100 if total_cases > 0 else 0
-    avg_latency = sum(r["latency_ms"] for r in results) / total_cases if total_cases > 0 else 0
-    total_cost = sum(r["cost_usd"] for r in results)
-    total_tokens = sum(r["tokens_input"] + r["tokens_output"] for r in results)
     
-    print(f"\n==== GPT EVALUATION RESULTS ====")
-    print(f"Model: {runner.model}")
-    print(f"Total Cases: {total_cases}")
-    print(f"Accuracy: {accuracy:.1f}%")
-    print(f"Avg Latency: {avg_latency:.1f}ms")
-    print(f"Total Cost: ${total_cost:.4f}")
-    print(f"Total Tokens: {total_tokens}")
-    print(f"Errors: {sum(1 for r in results if r['error'])}")
-    print(f"Total Time: {total_time:.2f}s")
+    # Calculate overall metrics
+    total_case_correct = sum(1 for r in results if r["consistency_metrics"].get("all_correct", False))
+    total_deterministic = sum(1 for r in results if r["consistency_metrics"].get("deterministic_performance", False))
     
-    # Suite breakdown
-    suite_stats = {}
-    for result in results:
-        suite = result["suite"]
-        if suite not in suite_stats:
-            suite_stats[suite] = {"total": 0, "correct": 0}
-        suite_stats[suite]["total"] += 1
-        if result["decision_correct"]:
-            suite_stats[suite]["correct"] += 1
+    total_record_correct = sum(r["consistency_metrics"].get("correct_count", 0) for r in results)
+    case_accuracy = total_case_correct / len(results) * 100
+    record_accuracy = total_record_correct / total_records * 100
+    deterministic_rate = total_deterministic / len(results) * 100
     
-    print("\nSuite Breakdown:")
-    for suite, stats in suite_stats.items():
-        suite_accuracy = (stats["correct"] / stats["total"] * 100) if stats["total"] > 0 else 0
-        print(f"  {suite}: {stats['correct']}/{stats['total']} ({suite_accuracy:.1f}%)")
+    avg_latency = sum(r["consistency_metrics"].get("avg_latency_ms", 0) for r in results) / len(results)
+    total_cost = sum(r["consistency_metrics"].get("total_cost_usd", 0) for r in results)
     
-    # Save results if requested
-    if args.output:
-        results_data = [
-            {
-                'case_id': r["case_id"],
-                'suite': r["suite"],
-                'decision_correct': r["decision_correct"],
-                'latency_ms': r["latency_ms"],
-                'tokens_input': r["tokens_input"],
-                'tokens_output': r["tokens_output"],
-                'cost_usd': r["cost_usd"],
-                'error': r["error"],
-                'expected_decision': r["expected"],
-                'actual_decision': r["actual"],
-                'reasoning': r["reasoning"]
-            }
-            for r in results
-        ]
-        
-        with args.output.open('w') as f:
-            json.dump(results_data, f, indent=2)
-        
-        print(f"\nResults saved to {args.output}")
-
+    # Calculate variance metrics
+    total_unique_decisions = sum(r["consistency_metrics"].get("unique_decisions", 1) for r in results)
+    avg_decision_variance = total_unique_decisions / len(results)
+    
+    print(f"\n" + "=" * 60)
+    print(f"🤖 GPT MULTI-RECORD BENCHMARK RESULTS")
+    print(f"=" * 60)
+    print(f"Total Cases:          {len(results)}")
+    print(f"Total Records:        {total_records}")
+    print(f"Cases All Correct:    {total_case_correct}/{len(results)} ({case_accuracy:.1f}%)")
+    print(f"Records Correct:      {total_record_correct}/{total_records} ({record_accuracy:.1f}%)")
+    print(f"Deterministic Cases:  {total_deterministic}/{len(results)} ({deterministic_rate:.1f}%)")
+    print(f"Avg Decision Variance: {avg_decision_variance:.1f} unique outputs per case")
+    print(f"Avg Latency:          {avg_latency:.1f}ms")
+    print(f"Total Cost:           ${total_cost:.4f}")
+    print(f"Total Time:           {total_time:.2f}s")
+    print(f"Errors:               {sum(1 for r in results if r['error'])}")
+    
+    # Variance analysis
+    high_variance_cases = [r for r in results if r["consistency_metrics"].get("unique_decisions", 1) > 1]
+    print(f"\nVariance Analysis:")
+    print(f"Cases with multiple outputs: {len(high_variance_cases)}/{len(results)} ({len(high_variance_cases)/len(results)*100:.1f}%)")
+    
+    if high_variance_cases:
+        print(f"High variance cases:")
+        for result in high_variance_cases:
+            metrics = result["consistency_metrics"]
+            print(f"  {result['case_id']}: {metrics['unique_decisions']} different outputs, {metrics['correctness_percentage']:.1f}% correct")
+    
+    print(f"\nGlobal Stats:")
+    print(f"Total API calls: {runner.stats['total_calls']}")
+    print(f"Total tokens: {runner.stats['total_tokens']:,}")
+    print(f"Total cost: ${runner.stats['total_cost']:.4f}")
 
 if __name__ == "__main__":
     main() 

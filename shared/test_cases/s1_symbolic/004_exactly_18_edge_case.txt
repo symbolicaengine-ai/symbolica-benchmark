@@ -1,0 +1,91 @@
+================================================================================
+TEST CASE: 004_exactly_18_edge_case
+================================================================================
+
+Description: Edge case for exactly 18 years old applicant
+Category: boundary_testing
+Difficulty: medium
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**LOAN APPROVAL POLICY - FIRST NATIONAL BANK**
+
+As part of our regulatory compliance and risk management framework, we need to implement 
+an automated loan approval system that evaluates applicant eligibility based on multiple 
+factors including age, credit worthiness, income stability, and financial history.
+
+**REGULATORY REQUIREMENTS:**
+- All loan applicants must be at least 18 years of age (federal banking regulation)
+- Applicants must be US citizens or permanent residents
+- Unemployed applicants are not eligible for unsecured loans
+- Applicants over 75 years old require special review processes
+
+**APPROVAL CRITERIA:**
+Our bank offers three tiers of approval:
+
+1. **Premium Tier**: For our most qualified customers
+   - Credit score 750 or higher
+   - Annual income $100,000 or more
+   - Debt-to-income ratio below 30%
+   - No bankruptcy history
+   - Credit limit up to $75,000 at 3.5% APR
+
+2. **Standard Tier**: For qualified customers
+   - Credit score 650 or higher
+   - Annual income $50,000 or more
+   - At least 2 years employment history OR income above $75,000
+   - No more than 1 bankruptcy in history
+   - Debt-to-income ratio below 40%
+   - Credit limit up to $50,000 at 4.5% APR
+
+3. **Basic Tier**: For entry-level customers
+   - Credit score 620 or higher
+   - Annual income $40,000 or more
+   - At least 3 years employment history
+   - No bankruptcy history
+   - Debt-to-income ratio below 35%
+   - Credit limit up to $25,000 at 5.5% APR
+
+**AUTOMATIC REJECTION CRITERIA:**
+- Credit score below 620
+- Annual income below $40,000
+- Multiple bankruptcies (more than 1)
+- High debt-to-income ratio (>40%) combined with bankruptcy history
+- Less than 2 years employment with income below $60,000
+
+Please process the following loan application and provide your decision with reasoning.
+
+CUSTOMER APPLICATION DATA:
+----------------------------------------
+
+Personal Info:
+  age: 18
+  citizenship_status: US Citizen
+  employment_status: employed
+
+Financial Info:
+  credit_score: 650
+  annual_income: 52000
+  debt_to_income_ratio: 0.35
+  employment_years: 2
+  previous_bankruptcies: 0
+Application Type: Personal Loan
+Requested Amount: 30000
+
+EXPECTED SYSTEM DECISION:
+----------------------------------------
+  eligible: True
+  screening_passed: True
+  approved: True
+  tier: standard
+  credit_limit: 50000
+  interest_rate: 0.045
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+Applicant is exactly 18 years old (meets minimum age requirement), has credit score of 650 
+(meets standard tier minimum), annual income of $52,000 (meets standard tier minimum), 
+and 2 years employment (meets standard tier requirement). This tests the exact boundary 
+condition for age eligibility and standard tier qualification.
+
+================================================================================ 

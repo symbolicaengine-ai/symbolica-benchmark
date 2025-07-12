@@ -1,37 +1,73 @@
 rules:
   # S2: Hybrid Rules (using PROMPT for sentiment)
+  
+  # Credit score eligibility check with ANY/ALL framework
   - id: "credit_score_eligibility"
     priority: 100
-    condition: "credit_score is not None and credit_score < 600"
+    condition:
+      all:
+        - "credit_score is not None"
+        - "credit_score < 600"
     actions:
       approved: false
       reason: "credit_score_too_low"
-      sentiment: "{{ PROMPT('Analyze the sentiment of this text and respond with exactly one word in lowercase: positive, negative, or neutral. Text: {feedback}') if feedback is not None else 'neutral' }}"
+      sentiment: "positive"
     tags: ["eligibility", "hybrid"]
     
+  # Positive sentiment expedited approval
   - id: "positive_sentiment_expedited"
     priority: 95
-    condition: "feedback is not None and age >= 18 and credit_score >= 600 and PROMPT('Analyze the sentiment of this text and respond with exactly one word in lowercase: positive, negative, or neutral. Text: {feedback}') == 'positive'"
+    condition:
+      all:
+        - "feedback is not None"
+        - "age >= 18"
+        - "credit_score >= 600"
+        - "PROMPT('Analyze the sentiment of this text and respond with exactly one word in lowercase: positive, negative, or neutral. Text: {feedback}') == 'positive'"
     actions:
       approved: true
       approval_type: "expedited"
       sentiment: "positive"
     tags: ["hybrid", "sentiment", "expedited"]
     
+  # Negative sentiment standard approval
   - id: "negative_sentiment_standard"
     priority: 90
-    condition: "feedback is not None and age >= 18 and credit_score >= 600 and PROMPT('Analyze the sentiment of this text and respond with exactly one word in lowercase: positive, negative, or neutral. Text: {feedback}') == 'negative'"
+    condition:
+      all:
+        - "feedback is not None"
+        - "age >= 18"
+        - "credit_score >= 600"
+        - "PROMPT('Analyze the sentiment of this text and respond with exactly one word in lowercase: positive, negative, or neutral. Text: {feedback}') == 'negative'"
     actions:
       approved: true
       approval_type: "standard"
       sentiment: "negative"
     tags: ["hybrid", "sentiment", "standard"]
     
+  # Neutral sentiment standard approval (edge case)
   - id: "neutral_sentiment_standard"
     priority: 85
-    condition: "feedback is not None and age >= 18 and credit_score >= 600 and PROMPT('Analyze the sentiment of this text and respond with exactly one word in lowercase: positive, negative, or neutral. Text: {feedback}') == 'neutral'"
+    condition:
+      all:
+        - "feedback is not None"
+        - "age >= 18"
+        - "credit_score >= 600"
+        - "PROMPT('Analyze the sentiment of this text and respond with exactly one word in lowercase: positive, negative, or neutral. Text: {feedback}') == 'neutral'"
     actions:
       approved: true
       approval_type: "standard"
       sentiment: "neutral"
-    tags: ["hybrid", "sentiment", "standard"] 
+    tags: ["hybrid", "sentiment", "standard"]
+
+  # Eligibility failure with comprehensive conditions
+  - id: "eligibility_failure"
+    priority: 80
+    condition:
+      any:
+        - "age < 18"
+        - "credit_score < 600"
+        - "feedback is None"
+    actions:
+      approved: false
+      reason: "{{ 'underage' if age < 18 else ('credit_score_too_low' if credit_score < 600 else 'missing_feedback') }}"
+    tags: ["hybrid", "rejection"] 

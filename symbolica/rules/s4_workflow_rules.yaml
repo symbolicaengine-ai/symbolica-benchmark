@@ -1,43 +1,149 @@
 rules:
   # S4: Workflow Rules (multi-step approval)
+  
+  # Eligibility check with ANY/ALL framework
   - id: "eligibility_check"
     priority: 100
-    condition: "age is not None and credit_score is not None and age >= 18 and credit_score >= 650"
+    condition:
+      all:
+        - "age is not None"
+        - "credit_score is not None"
+        - "age >= 18"
+        - "credit_score >= 650"
     actions:
       eligibility_passed: true
     tags: ["workflow", "eligibility"]
     
+  # Eligibility failure with comprehensive conditions
   - id: "eligibility_failure"
     priority: 99
-    condition: "age is not None and credit_score is not None and (age < 18 or credit_score < 650)"
+    condition:
+      all:
+        - "age is not None"
+        - "credit_score is not None"
+        - any:
+            - "age < 18"
+            - "credit_score < 650"
     actions:
       approved: false
       eligibility_passed: false
       reason: "{{ 'underage' if age < 18 else 'credit_score_below_minimum' }}"
     tags: ["workflow", "rejection"]
 
+  # High risk assessment requiring manager review
   - id: "high_risk_assessment"
     priority: 90
-    condition: "eligibility_passed == true and debt_to_income_ratio is not None and (debt_to_income_ratio > 0.4 or previous_bankruptcies is not None and previous_bankruptcies > 0)"
+    condition:
+      all:
+        - "age is not None"
+        - "credit_score is not None"
+        - "age >= 18"
+        - "credit_score >= 620"
+        - "debt_to_income_ratio is not None"
+        - any:
+            - "debt_to_income_ratio > 0.4"
+            - all:
+                - "previous_bankruptcies is not None"
+                - "previous_bankruptcies > 0"
     actions:
+      eligibility_passed: true
       risk_level: "high"
       manager_review_required: true
       approved: false
       escalation_reason: "{{ 'high_debt_ratio_and_bankruptcy_history' if debt_to_income_ratio > 0.4 and previous_bankruptcies > 0 else ('high_debt_ratio' if debt_to_income_ratio > 0.4 else 'bankruptcy_history') }}"
     tags: ["workflow", "risk", "escalation"]
 
+  # Conditional approval - edge case for borderline applications
+  - id: "conditional_approval"
+    priority: 88
+    condition:
+      all:
+        - "age is not None"
+        - "credit_score is not None"
+        - "age >= 18"
+        - "credit_score >= 620"
+        - "credit_score < 650"
+        - "debt_to_income_ratio is not None"
+        - "debt_to_income_ratio <= 0.35"
+        - any:
+            - "previous_bankruptcies is None"
+            - "previous_bankruptcies == 0"
+        - any:
+            # Additional positive factors for conditional approval
+            - "employment_years >= 5"
+            - "annual_income >= 70000"
+            - "collateral_offered == true"
+    actions:
+      eligibility_passed: true
+      risk_level: "medium"
+      manager_review_required: false
+      approved: true
+      approval_type: "conditional"
+      conditions: ["Additional documentation required", "Periodic review every 6 months"]
+    tags: ["workflow", "conditional", "approval"]
+
+  # Low risk assessment - direct approval
   - id: "low_risk_assessment"
     priority: 85
-    condition: "eligibility_passed == true and debt_to_income_ratio is not None and debt_to_income_ratio <= 0.4 and (previous_bankruptcies is None or previous_bankruptcies == 0)"
+    condition:
+      all:
+        - "age is not None"
+        - "credit_score is not None"
+        - "age >= 18"
+        - "credit_score >= 650"
+        - "debt_to_income_ratio is not None"
+        - "debt_to_income_ratio <= 0.4"
+        - any:
+            - "previous_bankruptcies is None"
+            - "previous_bankruptcies == 0"
     actions:
+      eligibility_passed: true
       risk_level: "low"
       manager_review_required: false
     tags: ["workflow", "risk"]
 
+  # Final approval for low risk applications
   - id: "final_approval"
     priority: 80
-    condition: "eligibility_passed == true and risk_level == 'low' and manager_review_required == false"
+    condition:
+      all:
+        - "age is not None"
+        - "credit_score is not None"
+        - "age >= 18"
+        - "credit_score >= 650"
+        - "debt_to_income_ratio is not None"
+        - "debt_to_income_ratio <= 0.4"
+        - any:
+            - "previous_bankruptcies is None"
+            - "previous_bankruptcies == 0"
     actions:
+      eligibility_passed: true
+      risk_level: "low"
+      manager_review_required: false
       approved: true
       approval_level: "standard"
-    tags: ["workflow", "approval"] 
+    tags: ["workflow", "approval"]
+
+  # Comprehensive rejection for workflow failures
+  - id: "comprehensive_rejection"
+    priority: 70
+    condition:
+      any:
+        - "age < 18"
+        - "credit_score < 620"
+        - all:
+            - "debt_to_income_ratio > 0.4"
+            - "previous_bankruptcies > 0"
+        - all:
+            - "credit_score < 650"
+            - "debt_to_income_ratio > 0.35"
+            - not:
+                any:
+                  - "employment_years >= 5"
+                  - "annual_income >= 70000"
+                  - "collateral_offered == true"
+    actions:
+      approved: false
+      eligibility_passed: false
+      reason: "{{ 'underage' if age < 18 else ('credit_score_too_low' if credit_score < 620 else ('high_risk_profile' if debt_to_income_ratio > 0.4 and previous_bankruptcies > 0 else 'insufficient_compensating_factors')) }}"
+    tags: ["workflow", "rejection"] 

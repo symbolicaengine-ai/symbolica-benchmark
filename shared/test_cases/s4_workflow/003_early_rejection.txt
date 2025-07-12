@@ -1,0 +1,82 @@
+================================================================================
+TEST CASE: 003_early_rejection
+================================================================================
+
+Description: Early rejection in workflow due to eligibility failure
+Category: workflow_rejection
+Difficulty: medium
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**COMPREHENSIVE LOAN APPROVAL WORKFLOW**
+
+**BUSINESS PROCESS:**
+Our loan approval system follows a multi-stage workflow that includes eligibility 
+screening, risk assessment, and final approval decisions. Some applications may 
+require manager review before final approval.
+
+**WORKFLOW STAGES:**
+
+1. **Initial Eligibility Screening:**
+   - Verify age, income, employment status
+   - Check basic credit requirements
+   - Confirm citizenship/residency status
+
+2. **Risk Assessment:**
+   - Analyze debt-to-income ratio
+   - Review bankruptcy history
+   - Assess employment stability
+   - Determine risk level (low, medium, high)
+
+3. **Manager Review Triggers:**
+   - High debt-to-income ratio (>40%) with bankruptcy history
+   - Borderline credit scores (620-650 range)
+   - Large loan amounts relative to income
+   - Multiple risk factors present
+
+4. **Final Approval Decision:**
+   - Low risk: Automatic approval
+   - Medium risk: Standard approval with conditions
+   - High risk: Requires manager review before approval
+   - Reject: If fundamental eligibility criteria not met
+
+**DECISION MATRIX:**
+- **Full Approval**: All criteria met, low risk profile
+- **Manager Review Required**: Meets basic eligibility but has risk factors
+- **Early Rejection**: Fails fundamental eligibility requirements
+
+Please process the following loan application through our complete workflow and 
+provide the appropriate decision and reasoning.
+
+CUSTOMER APPLICATION DATA:
+----------------------------------------
+
+Financial Info:
+  annual_income: 35000
+  credit_score: 580
+  debt_to_income_ratio: 0.3
+  employment_years: 0.5
+  previous_bankruptcies: 0
+
+Loan Details:
+  loan_type: Personal Loan
+  purpose: Debt consolidation
+  requested_amount: 15000
+
+Personal Info:
+  age: 22
+  employment_status: employed
+
+EXPECTED SYSTEM DECISION:
+----------------------------------------
+  approved: False
+  eligibility_passed: False
+  reason: credit_score_below_minimum
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+Customer fails eligibility check (credit score 580 < 650), causing
+workflow to terminate without proceeding to subsequent steps.
+
+
+================================================================================

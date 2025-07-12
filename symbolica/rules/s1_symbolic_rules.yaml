@@ -1,26 +1,130 @@
 rules:
-  # S1: Pure Symbolic Rules
-  - id: "age_requirement"
+  # S1: Pure Symbolic Rules with Complex Nested Logic
+  - id: "eligibility_screening"
     priority: 100
-    condition: "age is not None and age < 18"
+    condition:
+      all:
+        - "age is not None"
+        - "age >= 18"
+        - not:
+            any:
+              - "age > 75"
+              - "citizenship_status == 'non_resident'"
+              - "employment_status == 'unemployed'"
     actions:
-      eligible: false
-      reason: "underage"
+      eligible: true
+      screening_passed: true
     tags: ["eligibility", "regulatory"]
 
-  - id: "credit_score_minimum"
-    priority: 90
-    condition: "credit_score is not None and credit_score < 650"
+  - id: "ineligible_applicant"
+    priority: 95
+    condition:
+      any:
+        - "age is None"
+        - "age < 18"
+        - "age > 75"
+        - "citizenship_status == 'non_resident'"
+        - "employment_status == 'unemployed'"
     actions:
+      eligible: false
       approved: false
-      reason: "credit_score_too_low"
-    tags: ["risk", "policy"]
-    
-  - id: "high_income_approval"
-    priority: 80
-    condition: "age is not None and credit_score is not None and age >= 18 and credit_score >= 650 and annual_income >= 50000"
+      reason: "{{ 'underage' if age < 18 else ('overage' if age > 75 else ('non_resident' if citizenship_status == 'non_resident' else 'unemployed')) }}"
+    tags: ["eligibility", "regulatory"]
+
+  # Premium tier approval - highest qualification
+  - id: "premium_tier_approval"
+    priority: 90
+    condition:
+      all:
+        - "age >= 18"
+        - "age <= 75"
+        - "credit_score >= 750"
+        - "annual_income >= 100000"
+        - not:
+            any:
+              - "debt_to_income_ratio > 0.3"
+              - "previous_bankruptcies > 0"
     actions:
       approved: true
-      credit_limit: "{{ 50000 if annual_income >= 100000 else 25000 }}"
-      interest_rate: "{{ 0.045 if credit_score >= 750 else 0.055 }}"
-    tags: ["approval", "high_income"] 
+      tier: "premium"
+      credit_limit: 75000
+      interest_rate: 0.035
+    tags: ["approval", "premium"]
+
+  # Standard tier approval - middle qualification
+  - id: "standard_tier_approval"
+    priority: 85
+    condition:
+      all:
+        - "age >= 18"
+        - "age <= 75"
+        - "credit_score >= 650"
+        - "annual_income >= 50000"
+        - any:
+            - "employment_years >= 2"
+            - "annual_income >= 75000"
+        - not:
+            any:
+              - "debt_to_income_ratio > 0.4"
+              - "previous_bankruptcies > 1"
+        - not:
+            all:  # Don't qualify for premium
+              - "credit_score >= 750"
+              - "annual_income >= 100000"
+    actions:
+      approved: true
+      tier: "standard"
+      credit_limit: 50000
+      interest_rate: 0.045
+    tags: ["approval", "standard"]
+
+  # Basic tier approval - minimum qualification (includes edge cases)
+  - id: "basic_tier_approval"
+    priority: 80
+    condition:
+      all:
+        - "age >= 18"  # Includes exactly 18 edge case
+        - "age <= 75"
+        - "credit_score >= 620"  # Includes exactly 620 edge case
+        - "annual_income >= 40000"
+        - "employment_years >= 3"
+        - "debt_to_income_ratio <= 0.35"
+        - "previous_bankruptcies == 0"
+        - not:
+            any:  # Don't qualify for higher tiers
+              - all:
+                  - "credit_score >= 750"
+                  - "annual_income >= 100000"
+              - all:
+                  - "credit_score >= 650"
+                  - "annual_income >= 50000"
+    actions:
+      approved: true
+      tier: "basic"
+      credit_limit: 25000
+      interest_rate: 0.055
+    tags: ["approval", "basic"]
+
+  # Rejection assessment with comprehensive edge case handling
+  - id: "rejection_assessment"
+    priority: 70
+    condition:
+      all:
+        - "age >= 18"
+        - "age <= 75"
+        - "citizenship_status != 'non_resident'"
+        - "employment_status != 'unemployed'"
+        - any:
+            - "credit_score < 620"
+            - "annual_income < 40000"
+            - all:
+                - "debt_to_income_ratio > 0.4"
+                - "previous_bankruptcies > 0"
+            - all:
+                - "employment_years < 2"
+                - "annual_income < 60000"
+            - "previous_bankruptcies > 1"
+    actions:
+      approved: false
+      reason: "{{ 'credit_score_too_low' if credit_score < 620 else ('income_too_low' if annual_income < 40000 else ('high_risk_debt_and_bankruptcy' if debt_to_income_ratio > 0.4 and previous_bankruptcies > 0 else ('insufficient_employment_history' if employment_years < 2 and annual_income < 60000 else 'multiple_bankruptcies'))) }}"
+    tags: ["rejection", "risk_assessment"] 

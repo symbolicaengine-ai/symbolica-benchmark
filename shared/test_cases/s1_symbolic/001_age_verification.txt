@@ -1,0 +1,142 @@
+================================================================================
+TEST CASE: 001_age_verification
+================================================================================
+
+Description: Reject loan application for underage applicant
+Category: eligibility_check
+Difficulty: simple
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**LOAN APPROVAL POLICY - FIRST NATIONAL BANK**
+
+As part of our regulatory compliance and risk management framework, we need to implement 
+an automated loan approval system that evaluates applicant eligibility based on multiple 
+factors including age, credit worthiness, income stability, and financial history.
+
+**REGULATORY REQUIREMENTS:**
+- All loan applicants must be at least 18 years of age (federal banking regulation)
+- Applicants must be US citizens or permanent residents
+- Unemployed applicants are not eligible for unsecured loans
+- Applicants over 75 years old require special review processes
+
+**APPROVAL CRITERIA:**
+Our bank offers three tiers of approval:
+
+1. **Premium Tier**: For our most qualified customers
+   - Credit score 750 or higher
+   - Annual income $100,000 or more
+   - Debt-to-income ratio below 30%
+   - No bankruptcy history
+   - Credit limit up to $75,000 at 3.5% APR
+
+2. **Standard Tier**: For qualified customers
+   - Credit score 650 or higher
+   - Annual income $50,000 or more
+   - At least 2 years employment history OR income above $75,000
+   - No more than 1 bankruptcy in history
+   - Debt-to-income ratio below 40%
+   - Credit limit up to $50,000 at 4.5% APR
+
+3. **Basic Tier**: For entry-level customers
+   - Credit score 620 or higher
+   - Annual income $40,000 or more
+   - At least 3 years employment history
+   - No bankruptcy history
+   - Debt-to-income ratio below 35%
+   - Credit limit up to $25,000 at 5.5% APR
+
+**AUTOMATIC REJECTION CRITERIA:**
+- Credit score below 620
+- Annual income below $40,000
+- Multiple bankruptcies (more than 1)
+- High debt-to-income ratio (>40%) combined with bankruptcy history
+- Less than 2 years employment with income below $60,000
+
+Please process the following loan applications and provide your decision with reasoning.
+
+CUSTOMER APPLICATION DATA (MULTIPLE RECORDS):
+----------------------------------------
+
+Record 1:
+  age: 17
+  citizenship_status: US Citizen
+  employment_status: Student
+  credit_score: 720
+  annual_income: 45000
+  debt_to_income_ratio: 0.2
+  employment_years: 1
+  previous_bankruptcies: 0
+  Application Type: Personal Loan
+  Requested Amount: 15000
+
+Record 2:
+  age: 16
+  citizenship_status: US Citizen
+  employment_status: Part-time
+  credit_score: 680
+  annual_income: 42000
+  debt_to_income_ratio: 0.15
+  employment_years: 2
+  previous_bankruptcies: 0
+  Application Type: Personal Loan
+  Requested Amount: 12000
+
+Record 3:
+  age: 17
+  citizenship_status: US Citizen
+  employment_status: Student
+  credit_score: 780
+  annual_income: 48000
+  debt_to_income_ratio: 0.25
+  employment_years: 1
+  previous_bankruptcies: 0
+  Application Type: Personal Loan
+  Requested Amount: 18000
+
+Record 4:
+  age: 16
+  citizenship_status: US Citizen
+  employment_status: Part-time
+  credit_score: 650
+  annual_income: 38000
+  debt_to_income_ratio: 0.18
+  employment_years: 2
+  previous_bankruptcies: 0
+  Application Type: Personal Loan
+  Requested Amount: 10000
+
+Record 5:
+  age: 17
+  citizenship_status: US Citizen
+  employment_status: Student
+  credit_score: 740
+  annual_income: 50000
+  debt_to_income_ratio: 0.22
+  employment_years: 1
+  previous_bankruptcies: 0
+  Application Type: Personal Loan
+  Requested Amount: 20000
+
+EXPECTED SYSTEM DECISION (ALL RECORDS):
+----------------------------------------
+  eligible: False
+  approved: False
+  reason: underage
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+All applicants are under 18 years old (ages 16-17), which violates the fundamental 
+regulatory requirement that all loan applicants must be at least 18 years of age. 
+This is a strict regulatory compliance issue that overrides all other qualification 
+factors, regardless of how strong their credit scores (650-780) or income levels 
+($38,000-$50,000) may be. The system should consistently reject all underage 
+applicants with the same reasoning.
+
+CONSISTENCY TEST HYPOTHESIS:
+----------------------------------------
+Symbolica should deterministically reject all 5 records with identical reasoning.
+LLMs might show inconsistency in handling edge cases or be influenced by varying 
+credit scores/income levels, potentially approving some records incorrectly.
+
+================================================================================

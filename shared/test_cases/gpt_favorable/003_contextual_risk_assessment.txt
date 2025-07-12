@@ -1,0 +1,103 @@
+================================================================================
+TEST CASE: 003_contextual_risk_assessment
+================================================================================
+
+Description: GPT-favorable case requiring contextual reasoning and multi-factor inference
+Category: contextual_analysis
+Difficulty: complex
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**COMPREHENSIVE RISK ASSESSMENT - COMMERCIAL LENDING**
+
+**BACKGROUND:**
+Our commercial lending division evaluates business loan applications using a holistic 
+risk assessment approach that considers financial metrics, industry trends, management 
+quality, and market positioning. We recognize that successful lending requires 
+understanding context beyond just numbers.
+
+**RISK ASSESSMENT FRAMEWORK:**
+
+**QUANTITATIVE FACTORS:**
+- Financial performance and stability
+- Cash flow patterns and predictability  
+- Debt service coverage and leverage ratios
+- Collateral value and liquidity
+
+**QUALITATIVE FACTORS:**
+- Industry outlook and competitive position
+- Management experience and track record
+- Business model resilience and adaptability
+- Market trends and external factors
+
+**CONTEXTUAL CONSIDERATIONS:**
+- Economic environment and timing
+- Regulatory changes affecting industry
+- Technology disruption potential
+- Geographic and demographic factors
+
+**RISK CATEGORIES:**
+- **Low Risk**: Strong fundamentals, favorable context, experienced management
+- **Moderate Risk**: Solid fundamentals with some concerns or uncertainties
+- **High Risk**: Significant challenges requiring careful structure and monitoring
+- **Decline**: Unacceptable risk profile or unfavorable outlook
+
+Please evaluate the following loan application considering all quantitative and 
+qualitative factors in their proper context.
+
+CUSTOMER APPLICATION DATA:
+----------------------------------------
+
+Business Overview:
+  company_name: "Regional Print Solutions Inc."
+  industry: "Commercial printing and marketing services"
+  years_in_business: 22
+  employees: 45
+  
+Financial Metrics:
+  annual_revenue: 8500000
+  ebitda_margin: 0.12
+  debt_service_coverage: 1.8
+  current_ratio: 1.4
+  debt_to_equity: 0.65
+  
+Management Profile:
+  ceo_experience: "Founded company in 2002, 30 years total industry experience"
+  recent_changes: "Hired new COO in 2023 with digital transformation background"
+  succession_plan: "CEO's daughter joined as VP Operations, MBA from top program"
+  
+Market Context:
+  industry_trends: "Traditional printing declining 3-5% annually, but digital services growing 15%+"
+  competitive_position: "Regional leader, strong customer relationships, expanding digital offerings"
+  recent_investments: "Invested $2M in 2023 in digital printing equipment and web-to-print platform"
+  
+Loan Details:
+  requested_amount: 3500000
+  purpose: "Acquire smaller competitor with complementary digital capabilities"
+  term: "7 years"
+  proposed_structure: "Term loan with business assets as collateral"
+
+Additional Context:
+  market_analysis: "Target acquisition has strong digital marketing services division, would accelerate digital transformation. Local market consolidation happening as smaller players struggle with industry transition."
+  
+  customer_feedback: "Long-term customers appreciate both traditional quality and new digital capabilities. Several major accounts specifically mentioned preferring one-stop shop for all printing needs."
+  
+  timing_factors: "Interest rates rising but still favorable for established businesses. Acquisition target motivated due to retirement of owner, good strategic fit at reasonable valuation."
+
+EXPECTED SYSTEM DECISION:
+----------------------------------------
+  risk_category: "Moderate Risk"
+  recommendation: "Approve with conditions"
+  conditions: ["Quarterly digital revenue reporting", "Management succession planning documentation", "Acquisition integration milestone tracking"]
+  reasoning: "strong_fundamentals_with_proactive_digital_transition_strategy"
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+This case requires connecting multiple factors: declining traditional industry + growing 
+digital segment + management's proactive adaptation + strategic acquisition timing + 
+strong customer relationships + solid financials. While the industry headwinds create 
+concern, the company's proactive digital transformation, experienced management making 
+strategic moves, and strong market position suggest they're well-positioned to navigate 
+the transition. The acquisition accelerates necessary capabilities at a good time.
+
+================================================================================ 

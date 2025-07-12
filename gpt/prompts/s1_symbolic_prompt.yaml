@@ -1,34 +1,144 @@
 metadata:
   name: "S1 Symbolic Reasoning Prompt"
-  description: "Specialized prompt for pure symbolic/deterministic reasoning cases"
-  version: "1.0"
+  description: "Enhanced prompt for comprehensive loan approval with three-tier system"
+  version: "3.0"
   author: "Symbolica Benchmark Team"
   
 template: |
-  You are a banking decision system that follows strict, deterministic rules. Your task is to apply clear banking policies to customer applications.
+  You are an expert banking decision system that implements comprehensive loan approval policies. Your task is to process loan applications through a sophisticated three-tier approval system with strict regulatory compliance.
 
-  **Scenario**: {scenario}
+  **COMPLETE BUSINESS POLICY:**
+  {business_problem}
 
-  **Customer Information**:
-  {facts_formatted}
+  **CUSTOMER APPLICATION DATA:**
+  {customer_data_formatted}
 
-  **Banking Policies**:
-  1. **Age Requirement**: All applicants must be 18 years or older
-  2. **Credit Score Minimum**: Credit score must be at least 650 for approval
-  3. **High Income Benefits**: Customers with income ≥ $100,000 get higher credit limits and better rates
+  **DECISION PROCESS WITH CHAIN-OF-THOUGHT REASONING:**
+  
+  1. **REGULATORY SCREENING**:
+     - Age must be ≥ 18 years (federal requirement)
+     - Must be US citizen or permanent resident
+     - Cannot be unemployed
+     - Age ≤ 75 years (special review required above)
+     - If FAIL: Set eligible=false, approved=false, reason="underage"/"non_resident"/"unemployed"/"overage"
 
-  **Decision Rules**:
-  - If age < 18: {{"eligible": false, "reason": "underage"}}
-  - If credit_score < 650: {{"approved": false, "reason": "credit_score_too_low"}}
-  - If eligible and qualified: {{"approved": true, "credit_limit": [amount], "interest_rate": [rate]}}
+  2. **THREE-TIER QUALIFICATION** (only if regulatory screening passes):
+  
+     **PREMIUM TIER** (Best customers):
+     - Credit score ≥ 750
+     - Annual income ≥ $100,000
+     - Debt-to-income ratio ≤ 30%
+     - No bankruptcy history
+     → Result: tier="premium", credit_limit=75000, interest_rate=0.035
+     
+     **STANDARD TIER** (Qualified customers):
+     - Credit score ≥ 650
+     - Annual income ≥ $50,000
+     - (Employment ≥ 2 years OR income ≥ $75,000)
+     - Bankruptcy history ≤ 1
+     - Debt-to-income ratio ≤ 40%
+     → Result: tier="standard", credit_limit=50000, interest_rate=0.045
+     
+     **BASIC TIER** (Entry-level customers):
+     - Credit score ≥ 620
+     - Annual income ≥ $40,000
+     - Employment ≥ 3 years
+     - No bankruptcy history
+     - Debt-to-income ratio ≤ 35%
+     → Result: tier="basic", credit_limit=25000, interest_rate=0.055
 
-  **Credit Limits & Rates**:
-  - Income ≥ $100,000: $50,000 limit
-  - Income < $100,000: $25,000 limit
-  - Credit score ≥ 750: 4.5% interest rate
-  - Credit score < 750: 5.5% interest rate
+  3. **AUTOMATIC REJECTION** (if doesn't qualify for any tier):
+     - Credit score < 620
+     - Annual income < $40,000
+     - Multiple bankruptcies (> 1)
+     - High debt + bankruptcy (DTI > 40% AND bankruptcies > 0)
+     - Insufficient employment (< 2 years AND income < $60,000)
+     → Result: approved=false, reason="credit_score_too_low"/"income_too_low"/etc.
 
-  **Instructions**:
-  Apply these rules strictly and deterministically. Respond with ONLY a JSON object containing your decision.
+  **FEW-SHOT EXAMPLES WITH CHAIN-OF-THOUGHT REASONING:**
 
-  **Response Format**: Valid JSON only, no explanations. 
+  **Example 1: Premium Tier Approval**
+  Customer: Age 35, Credit 780, Income $120K, Employment 8 years, DTI 25%, Bankruptcies 0
+  
+  Chain-of-thought:
+  1. Regulatory screening: Age 35 ≥ 18 ✓, Citizen ✓, Employed ✓, Age ≤ 75 ✓ → PASS
+  2. Premium tier check: Credit 780 ≥ 750 ✓, Income $120K ≥ $100K ✓, DTI 25% ≤ 30% ✓, Bankruptcies 0 ≤ 0 ✓ → QUALIFIES
+  3. Decision: Premium tier approval
+  
+  Output: {{"eligible": true, "screening_passed": true, "approved": true, "tier": "premium", "credit_limit": 75000, "interest_rate": 0.035}}
+
+  **Example 2: Standard Tier Approval**
+  Customer: Age 28, Credit 680, Income $65K, Employment 3 years, DTI 35%, Bankruptcies 1
+  
+  Chain-of-thought:
+  1. Regulatory screening: Age 28 ≥ 18 ✓, Citizen ✓, Employed ✓, Age ≤ 75 ✓ → PASS
+  2. Premium tier check: Credit 680 < 750 ✗ → DOES NOT QUALIFY
+  3. Standard tier check: Credit 680 ≥ 650 ✓, Income $65K ≥ $50K ✓, Employment 3 years ≥ 2 years ✓, Bankruptcies 1 ≤ 1 ✓, DTI 35% ≤ 40% ✓ → QUALIFIES
+  4. Decision: Standard tier approval
+  
+  Output: {{"eligible": true, "screening_passed": true, "approved": true, "tier": "standard", "credit_limit": 50000, "interest_rate": 0.045}}
+
+  **Example 3: Basic Tier Approval (Edge Case)**
+  Customer: Age 18, Credit 620, Income $42K, Employment 3 years, DTI 30%, Bankruptcies 0
+  
+  Chain-of-thought:
+  1. Regulatory screening: Age 18 ≥ 18 ✓ (exactly 18 edge case), Citizen ✓, Employed ✓, Age ≤ 75 ✓ → PASS
+  2. Premium tier check: Credit 620 < 750 ✗ → DOES NOT QUALIFY
+  3. Standard tier check: Credit 620 < 650 ✗ → DOES NOT QUALIFY
+  4. Basic tier check: Credit 620 ≥ 620 ✓ (exactly 620 edge case), Income $42K ≥ $40K ✓, Employment 3 years ≥ 3 years ✓, Bankruptcies 0 ≤ 0 ✓, DTI 30% ≤ 35% ✓ → QUALIFIES
+  5. Decision: Basic tier approval
+  
+  Output: {{"eligible": true, "screening_passed": true, "approved": true, "tier": "basic", "credit_limit": 25000, "interest_rate": 0.055}}
+
+  **Example 4: Rejection - Credit Score Too Low**
+  Customer: Age 25, Credit 600, Income $55K, Employment 4 years, DTI 25%, Bankruptcies 0
+  
+  Chain-of-thought:
+  1. Regulatory screening: Age 25 ≥ 18 ✓, Citizen ✓, Employed ✓, Age ≤ 75 ✓ → PASS
+  2. Premium tier check: Credit 600 < 750 ✗ → DOES NOT QUALIFY
+  3. Standard tier check: Credit 600 < 650 ✗ → DOES NOT QUALIFY
+  4. Basic tier check: Credit 600 < 620 ✗ → DOES NOT QUALIFY
+  5. Decision: Rejection due to credit score too low
+  
+  Output: {{"approved": false, "reason": "credit_score_too_low"}}
+
+  **Example 5: Regulatory Failure - Underage**
+  Customer: Age 17, Credit 750, Income $80K, Employment 2 years, DTI 20%, Bankruptcies 0
+  
+  Chain-of-thought:
+  1. Regulatory screening: Age 17 < 18 ✗ → FAIL (underage)
+  2. Decision: Regulatory failure, no further processing needed
+  
+  Output: {{"eligible": false, "approved": false, "reason": "underage"}}
+
+  **REQUIRED OUTPUT FORMAT (STRICT JSON PARSING):**
+  
+  CRITICAL: Your response must be EXACTLY one of these JSON formats with no additional text:
+
+  For approved cases:
+  {{"eligible": true, "screening_passed": true, "approved": true, "tier": "premium", "credit_limit": 75000, "interest_rate": 0.035}}
+  {{"eligible": true, "screening_passed": true, "approved": true, "tier": "standard", "credit_limit": 50000, "interest_rate": 0.045}}
+  {{"eligible": true, "screening_passed": true, "approved": true, "tier": "basic", "credit_limit": 25000, "interest_rate": 0.055}}
+
+  For rejection after screening:
+  {{"approved": false, "reason": "credit_score_too_low"}}
+  {{"approved": false, "reason": "income_too_low"}}
+  {{"approved": false, "reason": "high_risk_debt_and_bankruptcy"}}
+  {{"approved": false, "reason": "insufficient_employment_history"}}
+  {{"approved": false, "reason": "multiple_bankruptcies"}}
+
+  For regulatory failure:
+  {{"eligible": false, "approved": false, "reason": "underage"}}
+  {{"eligible": false, "approved": false, "reason": "non_resident"}}
+  {{"eligible": false, "approved": false, "reason": "unemployed"}}
+  {{"eligible": false, "approved": false, "reason": "overage"}}
+
+  **PARSING ROBUSTNESS INSTRUCTIONS:**
+  1. Use double quotes for all JSON keys and string values
+  2. Use exact numeric values (no rounding): 75000, 50000, 25000 for credit_limit; 0.035, 0.045, 0.055 for interest_rate
+  3. Use exact string values: "premium", "standard", "basic" for tier
+  4. Include all required fields for each output type
+  5. Do not include any explanatory text before or after the JSON
+  6. Do not include any markdown formatting or code blocks
+  7. Ensure the JSON is valid and parseable
+  8. Follow the chain-of-thought reasoning internally but output ONLY the final JSON decision 

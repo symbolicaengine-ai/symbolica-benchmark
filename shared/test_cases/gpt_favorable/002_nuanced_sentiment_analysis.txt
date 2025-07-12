@@ -1,0 +1,85 @@
+================================================================================
+TEST CASE: 002_nuanced_sentiment_analysis
+================================================================================
+
+Description: GPT-favorable case requiring nuanced interpretation of mixed sentiment
+Category: complex_sentiment
+Difficulty: complex
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**CUSTOMER EXPERIENCE OPTIMIZATION - PREMIUM BANKING**
+
+**BACKGROUND:**
+Our premium banking division focuses on high-value customers who expect exceptional 
+service and personalized attention. We use advanced sentiment analysis to identify 
+customers who may be at risk of leaving or who represent opportunities for deeper 
+relationship building.
+
+**SENTIMENT ANALYSIS FRAMEWORK:**
+
+**CUSTOMER SENTIMENT CATEGORIES:**
+- **Highly Satisfied**: Strong positive language, loyalty indicators, referral mentions
+- **Generally Positive**: Satisfied but with room for improvement
+- **Mixed/Ambivalent**: Conflicting signals, both positive and negative elements  
+- **Concerning**: Frustration with specific issues, warning signs
+- **At Risk**: Clear dissatisfaction, competitive mentions, exit signals
+
+**RELATIONSHIP MANAGEMENT ACTIONS:**
+- **Highly Satisfied**: VIP service upgrade, referral incentives
+- **Generally Positive**: Standard excellent service, periodic check-ins
+- **Mixed/Ambivalent**: Proactive outreach to address concerns, relationship manager assignment
+- **Concerning**: Immediate intervention, service recovery protocols
+- **At Risk**: Executive escalation, retention offers, competitive analysis
+
+**ANALYSIS REQUIREMENTS:**
+Consider not just explicit emotional language, but also:
+- Subtle frustration or disappointment
+- Implied comparisons to competitors
+- Expectations vs reality gaps
+- Professional courtesy masking underlying sentiment
+- Context of communication (complaint, inquiry, feedback)
+
+Please analyze the following customer communication and determine the appropriate 
+sentiment category and recommended action.
+
+CUSTOMER APPLICATION DATA:
+----------------------------------------
+
+Customer Profile:
+  account_type: "Premium Private Banking"
+  relationship_length: "8 years"
+  account_value: 2500000
+  
+Communication Context:
+  communication_type: "Annual relationship review feedback"
+  date: "2024-01-20"
+  channel: "Email response to relationship manager"
+
+Customer Message:
+  content: "Thank you for the annual review summary. I appreciate the time you and your team invested in preparing the materials. The investment performance has been reasonable, though I must admit I had hoped for stronger returns given the market conditions this year. Your personal service continues to be professional and responsive, which I value. However, I've been hearing interesting things about some of the new digital platforms and wealth management approaches that other institutions are offering. I'm not actively looking to make changes, but I do think it's important to stay informed about market developments. I'd be interested in understanding how our current strategy compares to some of these newer approaches, and whether there are opportunities to enhance our collaboration. I look forward to our quarterly review next month."
+
+Communication Metadata:
+  length: "Longer than typical responses"
+  tone: "Polite but formal"
+  previous_interactions: "Usually brief, positive responses"
+  timing: "Sent during business hours, well-composed"
+
+EXPECTED SYSTEM DECISION:
+----------------------------------------
+  sentiment_category: "Mixed/Ambivalent"
+  risk_level: "Medium"
+  action_required: "Proactive outreach within 48 hours"
+  priority: "High"
+  reasoning: "polite_language_masking_competitive_research_and_performance_disappointment"
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+This case requires reading between the lines of professionally polite language. While 
+the customer uses courteous language ("appreciate," "value," "professional"), there are 
+clear warning signs: disappointment with performance ("hoped for stronger returns"), 
+research into competitors ("hearing interesting things," "other institutions"), and 
+subtle distancing ("our current strategy," "enhance our collaboration"). The formal tone 
+and increased message length compared to usual brief responses indicate elevated concern.
+
+================================================================================ 

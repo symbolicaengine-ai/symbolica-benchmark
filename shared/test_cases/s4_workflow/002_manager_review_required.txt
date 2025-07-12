@@ -1,0 +1,84 @@
+================================================================================
+TEST CASE: 002_manager_review_required
+================================================================================
+
+Description: Workflow routes to manager review for high-risk case
+Category: workflow_escalation
+Difficulty: complex
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**COMPREHENSIVE LOAN APPROVAL WORKFLOW**
+
+**BUSINESS PROCESS:**
+Our loan approval system follows a multi-stage workflow that includes eligibility 
+screening, risk assessment, and final approval decisions. Some applications may 
+require manager review before final approval.
+
+**WORKFLOW STAGES:**
+
+1. **Initial Eligibility Screening:**
+   - Verify age, income, employment status
+   - Check basic credit requirements
+   - Confirm citizenship/residency status
+
+2. **Risk Assessment:**
+   - Analyze debt-to-income ratio
+   - Review bankruptcy history
+   - Assess employment stability
+   - Determine risk level (low, medium, high)
+
+3. **Manager Review Triggers:**
+   - High debt-to-income ratio (>40%) with bankruptcy history
+   - Borderline credit scores (620-650 range)
+   - Large loan amounts relative to income
+   - Multiple risk factors present
+
+4. **Final Approval Decision:**
+   - Low risk: Automatic approval
+   - Medium risk: Standard approval with conditions
+   - High risk: Requires manager review before approval
+   - Reject: If fundamental eligibility criteria not met
+
+**DECISION MATRIX:**
+- **Full Approval**: All criteria met, low risk profile
+- **Manager Review Required**: Meets basic eligibility but has risk factors
+- **Early Rejection**: Fails fundamental eligibility requirements
+
+Please process the following loan application through our complete workflow and 
+provide the appropriate decision and reasoning.
+
+CUSTOMER APPLICATION DATA:
+----------------------------------------
+
+Financial Info:
+  annual_income: 60000
+  credit_score: 680
+  debt_to_income_ratio: 0.45
+  employment_years: 1
+  previous_bankruptcies: 1
+
+Loan Details:
+  loan_type: Personal Loan
+  purpose: Debt consolidation
+  requested_amount: 40000
+
+Personal Info:
+  age: 26
+  employment_status: employed
+
+EXPECTED SYSTEM DECISION:
+----------------------------------------
+  approved: False
+  eligibility_passed: True
+  escalation_reason: high_debt_ratio_and_bankruptcy_history
+  manager_review_required: True
+  risk_level: high
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+Customer passes eligibility but DTI ratio (0.45 > 0.4) and bankruptcy history
+trigger manager review requirement, blocking automatic approval.
+
+
+================================================================================

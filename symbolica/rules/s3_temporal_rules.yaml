@@ -1,27 +1,103 @@
 rules:
   # S3: Temporal Rules (fraud detection)
-  - id: "sustained_high_spending_fraud"
-    priority: 95
-    condition: "recent_transactions is not None and len(recent_transactions) >= 5 and min(recent_transactions) > 200 and time_window_minutes <= 60"
-    actions:
-      fraud_alert: true
-      alert_level: "high"
-      pattern: "sustained_high_spending"
-    tags: ["fraud", "temporal", "high_spending"]
-    
+  
+  # Impossible velocity fraud - highest priority
   - id: "impossible_velocity_fraud"
     priority: 100
-    condition: "distance_miles is not None and time_between_hours is not None and distance_miles > 1000 and time_between_hours < 6"
+    condition:
+      all:
+        - "distance_miles is not None"
+        - "time_between_hours is not None"
+        - "distance_miles > 1000"
+        - "time_between_hours < 6"
     actions:
       fraud_alert: true
       alert_level: "critical"
       pattern: "impossible_velocity"
     tags: ["fraud", "temporal", "velocity"]
     
+  # Sustained high spending fraud
+  - id: "sustained_high_spending_fraud"
+    priority: 95
+    condition:
+      all:
+        - "recent_transactions is not None"
+        - "len(recent_transactions) >= 5"
+        - "min(recent_transactions) > 200"
+        - "time_window_minutes <= 60"
+    actions:
+      fraud_alert: true
+      alert_level: "high"
+      pattern: "sustained_high_spending"
+    tags: ["fraud", "temporal", "high_spending"]
+    
+  # Gradual escalation fraud (edge case)
+  - id: "gradual_escalation_fraud"
+    priority: 93
+    condition:
+      all:
+        - "recent_transactions is not None"
+        - "len(recent_transactions) >= 6"
+        - "average_transaction is not None"
+        - "max(recent_transactions) > average_transaction * 7"
+        - "max(recent_transactions) > 400"
+        - any:
+            # Pattern indicators for gradual escalation
+            - "len(recent_transactions) >= 8"
+            - "max(recent_transactions) > 500"
+            - "time_window_minutes <= 120"
+    actions:
+      fraud_alert: true
+      alert_level: "high"
+      pattern: "gradual_escalation"
+    tags: ["fraud", "temporal", "escalation"]
+    
+  # Moderate risk pattern
+  - id: "moderate_risk_pattern"
+    priority: 70
+    condition:
+      all:
+        - "recent_transactions is not None"
+        - "average_transaction is not None"
+        - any:
+            # Moderate risk indicators
+            - all:
+                - "max(recent_transactions) > average_transaction * 3"
+                - "max(recent_transactions) <= average_transaction * 7"
+            - all:
+                - "len(recent_transactions) >= 4"
+                - "time_window_minutes <= 90"
+                - "max(recent_transactions) > 150"
+        - not:
+            any:
+              # Not high risk patterns
+              - "max(recent_transactions) > average_transaction * 7"
+              - "min(recent_transactions) > 200"
+              - "distance_miles > 1000"
+    actions:
+      fraud_alert: true
+      alert_level: "medium"
+      pattern: "moderate_risk"
+    tags: ["fraud", "temporal", "moderate"]
+    
+  # Normal spending pattern
   - id: "normal_spending_pattern"
     priority: 50
-    condition: "recent_transactions is not None and average_transaction is not None and all(abs(t - average_transaction) <= average_transaction * 0.5 for t in recent_transactions) and time_window_minutes >= 120"
+    condition:
+      all:
+        - "recent_transactions is not None"
+        - "average_transaction is not None"
+        - "max(recent_transactions) <= average_transaction * 1.5"
+        - "min(recent_transactions) >= average_transaction * 0.5"
+        - "time_window_minutes >= 120"
+        - not:
+            any:
+              # No fraud indicators
+              - "distance_miles > 1000"
+              - "max(recent_transactions) > 400"
+              - "min(recent_transactions) > 200"
     actions:
       fraud_alert: false
+      alert_level: "none"
       pattern: "normal"
     tags: ["normal", "temporal"] 

@@ -1,0 +1,196 @@
+rules:
+  # GPT-Favorable Rules: Cases requiring complex judgment and qualitative analysis
+  
+  # Rule for ambiguous policy interpretation (small business loan with flexibility)
+  - id: "small_business_quantitative_check"
+    priority: 100
+    condition:
+      all:
+        - "years_in_operation >= 2.0"
+        - "annual_revenue >= 150000"
+        - "personal_credit_score >= 640"
+        - "debt_service_coverage_ratio >= 1.25"
+    actions:
+      approved: true
+      approval_type: "standard"
+      reasoning: "meets_all_quantitative_criteria"
+    tags: ["small_business", "quantitative"]
+
+  - id: "small_business_flexible_approval"
+    priority: 90
+    condition:
+      all:
+        - "years_in_operation >= 1.5"  # Slightly below 2 years
+        - "annual_revenue >= 120000"   # Slightly below $150K
+        - "personal_credit_score >= 620"  # Slightly below 640
+        - "debt_service_coverage_ratio >= 1.10"  # Slightly below 1.25
+        - any:  # Must have at least one strong mitigating factor
+            - "years_in_community >= 10"  # Strong community ties
+            - "collateral_offered is not None"  # Additional security
+            - "growth_trajectory == true"  # Clear growth evidence
+            - "community_impact == true"  # Strong local impact
+    actions:
+      approved: true
+      approval_type: "conditional"
+      conditions: ["Personal guarantee required", "Monthly financial reporting for first year"]
+      reasoning: "marginal_metrics_offset_by_strong_qualitative_factors"
+    tags: ["small_business", "flexible", "conditional"]
+
+  - id: "small_business_rejection"
+    priority: 80
+    condition:
+      any:
+        - "years_in_operation < 1.5"
+        - "annual_revenue < 120000"
+        - "personal_credit_score < 620"
+        - "debt_service_coverage_ratio < 1.10"
+        - all:
+            # Marginal metrics without compensating factors
+            - "years_in_operation < 2.0"
+            - "annual_revenue < 150000"
+            - "personal_credit_score < 640"
+            - not:
+                any:
+                  - "years_in_community >= 10"
+                  - "collateral_offered is not None"
+                  - "growth_trajectory == true"
+                  - "community_impact == true"
+    actions:
+      approved: false
+      reasoning: "insufficient_quantitative_metrics_or_compensating_factors"
+    tags: ["small_business", "rejection"]
+
+  # Rules for nuanced sentiment analysis (premium banking)
+  - id: "highly_satisfied_customer"
+    priority: 100
+    condition:
+      all:
+        - "account_type == 'Premium Private Banking'"
+        - "content is not None"
+        - any:
+            - "content contains 'excellent'"
+            - "content contains 'outstanding'"
+            - "content contains 'highly satisfied'"
+            - "content contains 'recommend'"
+            - "content contains 'exceptional'"
+    actions:
+      sentiment_category: "Highly Satisfied"
+      risk_level: "Low"
+      action_required: "VIP service upgrade consideration"
+      action_priority: "Normal"
+    tags: ["sentiment", "positive"]
+
+  - id: "mixed_ambivalent_customer"
+    priority: 90
+    condition:
+      all:
+        - "account_type == 'Premium Private Banking'"
+        - "content is not None"
+        - any:
+            # Subtle warning signs
+            - all:
+                - "content contains 'reasonable'"
+                - "content contains 'hoped'"
+            - "content contains 'other institutions'"
+            - "content contains 'new approaches'"
+            - "content contains 'market developments'"
+            - "content contains 'stay informed'"
+            - "content contains 'exploring options'"
+        - any:
+            # Still some positive elements
+            - "content contains 'appreciate'"
+            - "content contains 'value'"
+            - "content contains 'professional'"
+            - "content contains 'responsive'"
+            - "content contains 'helpful'"
+    actions:
+      sentiment_category: "Mixed/Ambivalent"
+      risk_level: "Medium"
+      action_required: "Proactive outreach within 48 hours"
+      action_priority: "High"
+      reasoning: "polite_language_masking_competitive_research_and_performance_disappointment"
+    tags: ["sentiment", "mixed", "risk"]
+
+  - id: "concerning_customer"
+    priority: 85
+    condition:
+      all:
+        - "account_type == 'Premium Private Banking'"
+        - "content is not None"
+        - any:
+            - "content contains 'disappointed'"
+            - "content contains 'frustrated'"
+            - "content contains 'concerned'"
+            - "content contains 'considering'"
+            - "content contains 'unsatisfied'"
+            - "content contains 'problems'"
+    actions:
+      sentiment_category: "Concerning"
+      risk_level: "High"
+      action_required: "Immediate intervention required"
+      action_priority: "Urgent"
+    tags: ["sentiment", "negative", "urgent"]
+
+  # Rules for contextual risk assessment (commercial lending)
+  - id: "low_risk_traditional_business"
+    priority: 100
+    condition:
+      all:
+        - "annual_revenue >= 5000000"
+        - "debt_service_coverage >= 1.5"
+        - "years_in_business >= 15"
+        - "industry != 'declining'"
+        - not:
+            any:
+              - "industry == 'retail'"
+              - "industry == 'hospitality'"
+              - "digital_transformation_urgency == 'high'"
+    actions:
+      risk_category: "Low Risk"
+      recommendation: "Approve as structured"
+      interest_rate: "prime + 0.5%"
+    tags: ["commercial", "low_risk"]
+
+  - id: "moderate_risk_adapting_business"
+    priority: 90
+    condition:
+      all:
+        - "annual_revenue >= 5000000"
+        - "debt_service_coverage >= 1.5"
+        - "years_in_business >= 15"
+        - any:  # Signs of adaptation to industry challenges
+            - "recent_investments is not None"
+            - "new_management == true"
+            - "digital_transformation == true"
+            - "strategic_acquisition == true"
+            - "market_expansion == true"
+        - any:  # Industry challenges present
+            - "industry == 'retail'"
+            - "industry == 'hospitality'"
+            - "digital_transformation_urgency == 'high'"
+    actions:
+      risk_category: "Moderate Risk"
+      recommendation: "Approve with conditions"
+      conditions: ["Quarterly digital revenue reporting", "Management succession planning documentation", "Acquisition integration milestone tracking"]
+      reasoning: "strong_fundamentals_with_proactive_digital_transition_strategy"
+      interest_rate: "prime + 1.0%"
+    tags: ["commercial", "moderate_risk", "adaptation"]
+
+  - id: "high_risk_struggling_business"
+    priority: 80
+    condition:
+      any:
+        - "debt_service_coverage < 1.25"
+        - "annual_revenue < 3000000"
+        - all:
+            - "industry == 'declining'"
+            - "digital_transformation != true"
+            - "new_management != true"
+        - all:
+            - "years_in_business < 10"
+            - "debt_service_coverage < 1.4"
+    actions:
+      risk_category: "High Risk"
+      recommendation: "Decline"
+      reasoning: "insufficient_financial_strength_or_adaptation_strategy"
+    tags: ["commercial", "high_risk"] 

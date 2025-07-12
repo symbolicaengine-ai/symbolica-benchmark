@@ -1,43 +1,147 @@
 metadata:
   name: "S2 Hybrid Sentiment Analysis Prompt"
-  description: "Specialized prompt for hybrid reasoning with sentiment analysis"
-  version: "2.0"
+  description: "Enhanced prompt for hybrid loan approval with sentiment analysis and expedited processing"
+  version: "4.0"
   author: "Symbolica Benchmark Team"
   
 template: |
-  You are an expert banking decision system that combines strict eligibility rules with advanced sentiment analysis. Your task is to make loan approval decisions based on both objective criteria AND customer sentiment.
+  You are an expert banking decision system that combines comprehensive loan approval policies with advanced sentiment analysis for customer experience enhancement. Your task is to make loan approval decisions based on BOTH financial criteria AND customer sentiment.
 
-  **Scenario**: {scenario}
+  **COMPLETE BUSINESS POLICY:**
+  {business_problem}
 
-  **Customer Information**:
-  {facts_formatted}
+  **CUSTOMER APPLICATION DATA:**
+  {customer_data_formatted}
 
-  **Decision Process**:
-  1. **Eligibility Check**: Verify basic requirements
+  **HYBRID DECISION PROCESS WITH CHAIN-OF-THOUGHT REASONING:**
+  
+  1. **FINANCIAL ELIGIBILITY CHECK**:
      - Age must be ≥ 18 years
-     - Credit score must be ≥ 600 for any approval
+     - Credit score must be ≥ 600 for any approval consideration
+     - Annual income must be ≥ $30,000
+     - Cannot be currently unemployed
+     - If FAIL any criterion: Immediate rejection regardless of sentiment
+
+  2. **SENTIMENT ANALYSIS** (only if financially eligible):
+     Analyze the customer's application feedback/communication:
+     
+     **POSITIVE SENTIMENT INDICATORS:**
+     - Words: excited, amazing, wonderful, trust, confident, great, satisfied, happy, optimistic, grateful, love, excellent, outstanding, fantastic, thrilled, delighted
+     - Phrases: "looking forward", "can't wait", "really appreciate", "amazing service", "so helpful", "very pleased", "extremely satisfied"
+     
+     **NEGATIVE SENTIMENT INDICATORS:**
+     - Words: frustrated, disappointed, concerned, worried, upset, angry, dissatisfied, reluctant, skeptical, slow, poor, terrible, awful, annoyed, irritated
+     - Phrases: "waste of time", "don't trust", "terrible experience", "not satisfied", "very frustrated", "completely disappointed", "poor service"
+     
+     **NEUTRAL SENTIMENT:**
+     - Factual statements without emotional language
+     - Professional/business-like tone
+     - No clear positive or negative indicators
+     - Formal, objective language
+
+  3. **PROCESSING TYPE DETERMINATION**:
+     - Financial eligible + POSITIVE sentiment → **EXPEDITED** approval (24-hour processing)
+     - Financial eligible + NEGATIVE sentiment → **STANDARD** approval (5-7 days processing) 
+     - Financial eligible + NEUTRAL sentiment → **STANDARD** approval (5-7 days processing)
+     - Financial ineligible (any sentiment) → **REJECTION** with reason
+
+  **FEW-SHOT EXAMPLES WITH CHAIN-OF-THOUGHT REASONING:**
+
+  **Example 1: Positive Sentiment Expedited Approval**
+  Customer: Age 25, Credit 720, Income $85K, Feedback: "I'm so excited about this loan opportunity! Your team has been amazing and I can't wait to get started. The service has been outstanding!"
   
-  2. **Sentiment Analysis**: Analyze customer feedback to determine sentiment
-     - Look for positive words: excited, love, trust, amazing, confident, thank you
-     - Look for negative words: frustrated, don't trust, waste of time, slow
-     - Classify as: "positive", "negative", or "neutral"
+  Chain-of-thought:
+  1. Financial eligibility: Age 25 ≥ 18 ✓, Credit 720 ≥ 600 ✓, Income $85K ≥ $30K ✓, Employed ✓ → PASS
+  2. Sentiment analysis: Contains "excited", "amazing", "can't wait", "outstanding" → POSITIVE
+  3. Processing type: Eligible + Positive → EXPEDITED
+  4. Decision: Expedited approval
   
-  3. **Approval Decision**: Combine eligibility + sentiment
-     - If ineligible (age < 18 OR credit < 600): Reject regardless of sentiment
-     - If eligible + positive sentiment: Expedited approval
-     - If eligible + negative sentiment: Standard approval
-     - If eligible + neutral sentiment: Standard approval
+  Output: {{"approved": true, "approval_type": "expedited", "sentiment": "positive"}}
 
-  **Response Requirements**:
-  Your JSON response must include:
-  - "approved": true/false
-  - "sentiment": "positive"/"negative"/"neutral" 
-  - "approval_type": "expedited"/"standard" (if approved)
-  - "reason": "credit_score_too_low" (if rejected due to credit)
+  **Example 2: Negative Sentiment Standard Approval**
+  Customer: Age 30, Credit 650, Income $45K, Feedback: "I'm really frustrated with this process. It's been a waste of time and your service has been terrible. I'm very disappointed."
+  
+  Chain-of-thought:
+  1. Financial eligibility: Age 30 ≥ 18 ✓, Credit 650 ≥ 600 ✓, Income $45K ≥ $30K ✓, Employed ✓ → PASS
+  2. Sentiment analysis: Contains "frustrated", "waste of time", "terrible", "disappointed" → NEGATIVE
+  3. Processing type: Eligible + Negative → STANDARD
+  4. Decision: Standard approval
+  
+  Output: {{"approved": true, "approval_type": "standard", "sentiment": "negative"}}
 
-  **Examples**:
-  - Eligible + positive: {{"approved": true, "approval_type": "expedited", "sentiment": "positive"}}
-  - Eligible + negative: {{"approved": true, "approval_type": "standard", "sentiment": "negative"}}
-  - Ineligible: {{"approved": false, "reason": "credit_score_too_low", "sentiment": "positive"}}
+  **Example 3: Neutral Sentiment Standard Approval (Edge Case)**
+  Customer: Age 35, Credit 680, Income $55K, Feedback: "I am submitting this application for a business loan. Please process according to your standard procedures. I have attached all required documentation."
+  
+  Chain-of-thought:
+  1. Financial eligibility: Age 35 ≥ 18 ✓, Credit 680 ≥ 600 ✓, Income $55K ≥ $30K ✓, Employed ✓ → PASS
+  2. Sentiment analysis: Professional tone, no emotional indicators, factual statements → NEUTRAL
+  3. Processing type: Eligible + Neutral → STANDARD
+  4. Decision: Standard approval
+  
+  Output: {{"approved": true, "approval_type": "standard", "sentiment": "neutral"}}
 
-  **Instructions**: Analyze the sentiment carefully and apply the rules precisely. Respond with ONLY valid JSON. 
+  **Example 4: Financial Rejection with Positive Sentiment**
+  Customer: Age 16, Credit 800, Income $100K, Feedback: "I'm so excited about this opportunity! Your service has been amazing and I love working with your team!"
+  
+  Chain-of-thought:
+  1. Financial eligibility: Age 16 < 18 ✗ → FAIL (underage)
+  2. Sentiment analysis: Contains "excited", "amazing", "love" → POSITIVE
+  3. Decision: Rejection due to regulatory failure (underage)
+  
+  Output: {{"approved": false, "reason": "underage", "sentiment": "positive"}}
+
+  **Example 5: Financial Rejection with Credit Score Too Low**
+  Customer: Age 35, Credit 550, Income $60K, Feedback: "Looking forward to working with you on this loan application. I appreciate your consideration."
+  
+  Chain-of-thought:
+  1. Financial eligibility: Age 35 ≥ 18 ✓, Credit 550 < 600 ✗ → FAIL (credit too low)
+  2. Sentiment analysis: Contains "looking forward", "appreciate" → POSITIVE
+  3. Decision: Rejection due to credit score too low
+  
+  Output: {{"approved": false, "reason": "credit_score_too_low", "sentiment": "positive"}}
+
+  **Example 6: Edge Case - Exactly 600 Credit Score**
+  Customer: Age 22, Credit 600, Income $35K, Feedback: "I hope this application goes smoothly. I'm confident in my financial situation."
+  
+  Chain-of-thought:
+  1. Financial eligibility: Age 22 ≥ 18 ✓, Credit 600 ≥ 600 ✓ (exactly 600 edge case), Income $35K ≥ $30K ✓, Employed ✓ → PASS
+  2. Sentiment analysis: Contains "hope", "confident" → POSITIVE
+  3. Processing type: Eligible + Positive → EXPEDITED
+  4. Decision: Expedited approval
+  
+  Output: {{"approved": true, "approval_type": "expedited", "sentiment": "positive"}}
+
+  **REQUIRED OUTPUT FORMAT (STRICT JSON PARSING):**
+  
+  CRITICAL: Your response must be EXACTLY one of these JSON formats with no additional text:
+  
+  For financially eligible applicants:
+  {{"approved": true, "approval_type": "expedited", "sentiment": "positive"}}
+  {{"approved": true, "approval_type": "standard", "sentiment": "negative"}}
+  {{"approved": true, "approval_type": "standard", "sentiment": "neutral"}}
+
+  For financially ineligible applicants:
+  {{"approved": false, "reason": "underage", "sentiment": "positive"}}
+  {{"approved": false, "reason": "underage", "sentiment": "negative"}}
+  {{"approved": false, "reason": "underage", "sentiment": "neutral"}}
+  {{"approved": false, "reason": "credit_score_too_low", "sentiment": "positive"}}
+  {{"approved": false, "reason": "credit_score_too_low", "sentiment": "negative"}}
+  {{"approved": false, "reason": "credit_score_too_low", "sentiment": "neutral"}}
+  {{"approved": false, "reason": "income_too_low", "sentiment": "positive"}}
+  {{"approved": false, "reason": "income_too_low", "sentiment": "negative"}}
+  {{"approved": false, "reason": "income_too_low", "sentiment": "neutral"}}
+  {{"approved": false, "reason": "unemployed", "sentiment": "positive"}}
+  {{"approved": false, "reason": "unemployed", "sentiment": "negative"}}
+  {{"approved": false, "reason": "unemployed", "sentiment": "neutral"}}
+
+  **PARSING ROBUSTNESS INSTRUCTIONS:**
+  1. Use double quotes for all JSON keys and string values
+  2. Use exact string values: "expedited", "standard" for approval_type
+  3. Use exact string values: "positive", "negative", "neutral" for sentiment
+  4. Use exact string values: "underage", "credit_score_too_low", "income_too_low", "unemployed" for reason
+  5. Include all required fields for each output type
+  6. Do not include any explanatory text before or after the JSON
+  7. Do not include any markdown formatting or code blocks
+  8. Ensure the JSON is valid and parseable
+  9. Follow the chain-of-thought reasoning internally but output ONLY the final JSON decision
+  10. Always include both "approved" and "sentiment" fields in every response 

@@ -1,0 +1,74 @@
+================================================================================
+TEST CASE: 004_gradual_fraud_escalation
+================================================================================
+
+Description: Realistic gradual fraud pattern with escalating transaction amounts
+Category: fraud_detection
+Difficulty: complex
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**FRAUD DETECTION SYSTEM - TEMPORAL ANALYSIS**
+
+**BACKGROUND:**
+Our fraud detection system monitors customer transaction patterns over time to 
+identify potentially fraudulent activity. We need to analyze recent transaction 
+history and geographic patterns to determine if transactions should be flagged 
+for fraud review.
+
+**TEMPORAL ANALYSIS RULES:**
+
+1. **Sustained High Spending Pattern:**
+   - If customer has multiple high-value transactions (>$1000) within a short timeframe
+   - AND transactions are significantly above their normal spending pattern
+   - AND the pattern persists over multiple days
+   → Flag as potential fraud
+
+2. **Geographic Velocity Pattern:**
+   - If customer makes transactions in multiple distant locations within impossible timeframes
+   - OR transactions occur in known high-risk geographic areas
+   - OR rapid movement between significantly distant locations
+   → Flag as potential fraud
+
+3. **Normal Spending Pattern:**
+   - If transactions are within normal spending ranges for the customer
+   - AND geographic patterns are consistent with customer's typical behavior
+   - AND no suspicious velocity or amount patterns
+   → Continue normal processing
+
+**ANALYSIS CRITERIA:**
+- Review transaction amounts, times, and locations
+- Compare against customer's historical spending patterns
+- Consider geographic feasibility of transaction sequence
+- Look for sudden changes in spending behavior
+
+Please analyze the following customer transaction data and determine if fraud 
+investigation is warranted.
+
+CUSTOMER APPLICATION DATA:
+----------------------------------------
+Customer Id: CUST_003
+Analysis Period: Last 7 days
+
+Transaction History:
+  recent_transactions: [85, 95, 110, 180, 250, 420, 680, 890]
+  average_transaction: 95
+  time_window_minutes: 180
+  locations: ['Denver, CO', 'Denver, CO', 'Aurora, CO', 'Denver, CO', 'Denver, CO', 'Lakewood, CO', 'Denver, CO', 'Westminster, CO']
+  transaction_times: ['2024-01-15 09:15', '2024-01-15 14:30', '2024-01-16 10:45', '2024-01-16 15:20', '2024-01-17 11:00', '2024-01-17 16:35', '2024-01-18 12:15', '2024-01-18 17:45']
+
+EXPECTED SYSTEM DECISION:
+----------------------------------------
+  fraud_alert: True
+  alert_level: high
+  pattern: sustained_high_spending
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+This case shows a realistic gradual escalation pattern typical of account takeover fraud. 
+The customer's average transaction is $95, but there's a clear escalation: starting with 
+normal amounts ($85-$110) and gradually increasing to suspicious levels ($680-$890). 
+The pattern spans multiple days with geographically feasible but expanding locations 
+around Denver metro area, making it more sophisticated than obvious fraud patterns.
+
+================================================================================ 

@@ -1,0 +1,79 @@
+================================================================================
+TEST CASE: 004_neutral_sentiment_edge
+================================================================================
+
+Description: Edge case for neutral sentiment with factual communication
+Category: sentiment_boundary
+Difficulty: medium
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**HYBRID LOAN APPROVAL SYSTEM - CUSTOMER EXPERIENCE ENHANCEMENT**
+
+**BACKGROUND:**
+Our bank has implemented a hybrid approval system that combines traditional 
+credit analysis with customer sentiment analysis to improve customer experience 
+and identify our most satisfied customers for expedited processing.
+
+**BUSINESS REQUIREMENT:**
+We want to offer **expedited approval processing** (24-hour turnaround instead of 
+5-7 business days) for customers who meet both criteria:
+
+1. **Basic Financial Eligibility:**
+   - Age 18 or older
+   - Credit score 600 or higher
+   - Annual income $30,000 or higher
+   - Not currently unemployed
+
+2. **Positive Customer Sentiment:**
+   - Customer feedback or communication expresses positive sentiment about our bank
+   - Examples: excitement about loan opportunity, trust in our services, 
+     satisfaction with previous interactions, optimism about working with us
+
+**PROCESSING RULES:**
+- If customer meets financial eligibility AND expresses positive sentiment 
+  → Approve with "expedited" processing
+- If customer meets financial eligibility BUT expresses negative sentiment 
+  → Approve with "standard" processing (may require additional review)
+- If customer does NOT meet financial eligibility, regardless of sentiment 
+  → Reject with appropriate reason
+
+**SENTIMENT ANALYSIS GUIDANCE:**
+Look for language that indicates:
+- **Positive**: excited, happy, trust, amazing, wonderful, great experience, 
+  satisfied, confident, optimistic, grateful
+- **Negative**: frustrated, disappointed, concerned, worried, upset, angry, 
+  dissatisfied, reluctant, skeptical
+- **Neutral**: factual statements without emotional language
+
+Please analyze the following customer application and determine the appropriate 
+approval decision and processing type.
+
+CUSTOMER APPLICATION DATA:
+----------------------------------------
+
+Personal Info:
+  age: 32
+  employment_status: employed
+
+Financial Info:
+  credit_score: 680
+  annual_income: 65000
+Application Feedback: "I am submitting this loan application for a personal loan of $15,000. I have reviewed the terms and conditions on your website. Please process this application according to your standard procedures. I can provide additional documentation if required."
+Application Type: Personal Loan
+Requested Amount: 15000
+
+EXPECTED SYSTEM DECISION:
+----------------------------------------
+  approved: True
+  approval_type: standard
+  sentiment: neutral
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+Customer clearly meets financial eligibility requirements (age 32 ≥ 18, 
+credit score 680 ≥ 600, annual income $65,000 ≥ $30,000) BUT expresses 
+neutral sentiment with purely factual, business-like language without any 
+emotional indicators. This qualifies for standard approval processing, not expedited.
+
+================================================================================ 

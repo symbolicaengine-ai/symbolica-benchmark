@@ -1,0 +1,78 @@
+================================================================================
+TEST CASE: 002_negative_sentiment_standard
+================================================================================
+
+Description: Standard processing for eligible customer with negative sentiment
+Category: hybrid_approval
+Difficulty: medium
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**HYBRID LOAN APPROVAL SYSTEM - CUSTOMER EXPERIENCE ENHANCEMENT**
+
+**BACKGROUND:**
+Our bank has implemented a hybrid approval system that combines traditional 
+credit analysis with customer sentiment analysis to improve customer experience 
+and identify our most satisfied customers for expedited processing.
+
+**BUSINESS REQUIREMENT:**
+We want to offer **expedited approval processing** (24-hour turnaround instead of 
+5-7 business days) for customers who meet both criteria:
+
+1. **Basic Financial Eligibility:**
+   - Age 18 or older
+   - Credit score 600 or higher
+   - Annual income $30,000 or higher
+   - Not currently unemployed
+
+2. **Positive Customer Sentiment:**
+   - Customer feedback or communication expresses positive sentiment about our bank
+   - Examples: excitement about loan opportunity, trust in our services, 
+     satisfaction with previous interactions, optimism about working with us
+
+**PROCESSING RULES:**
+- If customer meets financial eligibility AND expresses positive sentiment 
+  → Approve with "expedited" processing
+- If customer meets financial eligibility BUT expresses negative sentiment 
+  → Approve with "standard" processing (may require additional review)
+- If customer does NOT meet financial eligibility, regardless of sentiment 
+  → Reject with appropriate reason
+
+**SENTIMENT ANALYSIS GUIDANCE:**
+Look for language that indicates:
+- **Positive**: excited, happy, trust, amazing, wonderful, great experience, 
+  satisfied, confident, optimistic, grateful
+- **Negative**: frustrated, disappointed, concerned, worried, upset, angry, 
+  dissatisfied, reluctant, skeptical
+- **Neutral**: factual statements without emotional language
+
+Please analyze the following customer application and determine the appropriate 
+approval decision and processing type.
+
+CUSTOMER APPLICATION DATA:
+----------------------------------------
+Application Feedback: I'm frustrated with your slow process and honestly don't trust banks in general. This whole thing feels like a waste of time.
+Application Type: Personal Loan
+
+Financial Info:
+  annual_income: 70000
+  credit_score: 680
+
+Personal Info:
+  age: 32
+  employment_status: employed
+Requested Amount: 25000
+
+EXPECTED SYSTEM DECISION:
+----------------------------------------
+  approval_type: standard
+  approved: True
+  sentiment: negative
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+Customer meets eligibility requirements but expresses negative sentiment
+with words like "frustrated", "don't trust", "waste of time".
+
+
+================================================================================

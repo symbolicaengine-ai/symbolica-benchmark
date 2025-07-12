@@ -1,0 +1,122 @@
+================================================================================
+TEST CASE: 001_positive_sentiment_expedited
+================================================================================
+
+Description: Expedite approval for eligible customers with positive sentiment
+Category: hybrid_approval
+Difficulty: medium
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**HYBRID LOAN APPROVAL SYSTEM - CUSTOMER EXPERIENCE ENHANCEMENT**
+
+**BACKGROUND:**
+Our bank has implemented a hybrid approval system that combines traditional 
+credit analysis with customer sentiment analysis to improve customer experience 
+and identify our most satisfied customers for expedited processing.
+
+**BUSINESS REQUIREMENT:**
+We want to offer **expedited approval processing** (24-hour turnaround instead of 
+5-7 business days) for customers who meet both criteria:
+
+1. **Basic Financial Eligibility:**
+   - Age 18 or older
+   - Credit score 600 or higher
+   - Annual income $30,000 or higher
+   - Not currently unemployed
+
+2. **Positive Customer Sentiment:**
+   - Customer feedback or communication expresses positive sentiment about our bank
+   - Examples: excitement about loan opportunity, trust in our services, 
+     satisfaction with previous interactions, optimism about working with us
+
+**PROCESSING RULES:**
+- If customer meets financial eligibility AND expresses positive sentiment 
+  → Approve with "expedited" processing
+- If customer meets financial eligibility BUT expresses negative sentiment 
+  → Approve with "standard" processing (may require additional review)
+- If customer does NOT meet financial eligibility, regardless of sentiment 
+  → Reject with appropriate reason
+
+**SENTIMENT ANALYSIS GUIDANCE:**
+Look for language that indicates:
+- **Positive**: excited, happy, trust, amazing, wonderful, great experience, 
+  satisfied, confident, optimistic, grateful
+- **Negative**: frustrated, disappointed, concerned, worried, upset, angry, 
+  dissatisfied, reluctant, skeptical
+- **Neutral**: factual statements without emotional language
+
+Please analyze the following customer applications and determine the appropriate 
+approval decision and processing type.
+
+CUSTOMER APPLICATION DATA (MULTIPLE RECORDS):
+----------------------------------------
+
+Record 1:
+  age: 29
+  employment_status: employed
+  credit_score: 720
+  annual_income: 85000
+  Application Feedback: "I'm really excited about this loan opportunity! Your bank has been amazing to work with and I trust you completely with my financial future."
+  Application Type: Personal Loan
+  Requested Amount: 25000
+
+Record 2:
+  age: 32
+  employment_status: employed
+  credit_score: 680
+  annual_income: 65000
+  Application Feedback: "This is wonderful! I've been looking forward to working with your bank. Your team has been so helpful and I'm confident this will be great."
+  Application Type: Personal Loan
+  Requested Amount: 20000
+
+Record 3:
+  age: 25
+  employment_status: employed
+  credit_score: 650
+  annual_income: 45000
+  Application Feedback: "I'm thrilled about this opportunity! Your bank has such an excellent reputation and I'm grateful for your outstanding service."
+  Application Type: Personal Loan
+  Requested Amount: 15000
+
+Record 4:
+  age: 28
+  employment_status: employed
+  credit_score: 700
+  annual_income: 55000
+  Application Feedback: "Amazing experience so far! I trust your bank completely and I'm excited to move forward. You've been fantastic to work with."
+  Application Type: Personal Loan
+  Requested Amount: 18000
+
+Record 5:
+  age: 35
+  employment_status: employed
+  credit_score: 640
+  annual_income: 38000
+  Application Feedback: "I'm so happy to work with your bank! This is a great opportunity and I'm optimistic about the future. Thank you for your wonderful service."
+  Application Type: Personal Loan
+  Requested Amount: 12000
+
+EXPECTED SYSTEM DECISION (ALL RECORDS):
+----------------------------------------
+  approved: True
+  approval_type: expedited
+  sentiment: positive
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+All customers clearly meet financial eligibility requirements (age ≥ 18, credit score 
+≥ 600, annual income ≥ $30,000, employed status) AND all express strong positive 
+sentiment with words like "excited", "amazing", "trust", "wonderful", "thrilled", 
+"grateful", "outstanding", "fantastic", "happy", "great", and "optimistic". 
+Despite varying credit scores (640-720) and income levels ($38,000-$85,000), all 
+qualify for expedited approval processing due to meeting both criteria consistently.
+
+CONSISTENCY TEST HYPOTHESIS:
+----------------------------------------
+Symbolica should deterministically approve all 5 records with "expedited" processing.
+LLMs might show inconsistency in sentiment analysis, potentially classifying some 
+positive feedback as neutral, or being influenced by varying financial profiles 
+to incorrectly assign "standard" processing to lower-income applicants.
+
+================================================================================

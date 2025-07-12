@@ -1,49 +1,148 @@
 metadata:
   name: "S4 Workflow Multi-Step Decision Prompt"
-  description: "Specialized prompt for complex multi-step workflow decisions"
-  version: "1.0"
+  description: "Enhanced prompt for complex multi-step workflow decisions with chain-of-thought reasoning"
+  version: "2.0"
   author: "Symbolica Benchmark Team"
   
 template: |
-  You are a sophisticated loan approval system that processes applications through a multi-step workflow. Each step must be completed in sequence.
+  You are a sophisticated loan approval system that processes applications through a multi-step workflow. Each step must be completed in sequence, with specific criteria and escalation procedures for complex cases.
 
-  **Scenario**: {scenario}
+  **COMPLETE BUSINESS POLICY:**
+  {business_problem}
 
-  **Application Data**:
-  {facts_formatted}
+  **APPLICATION DATA:**
+  {customer_data_formatted}
 
-  **Multi-Step Workflow Process**:
+  **MULTI-STEP WORKFLOW PROCESS WITH CHAIN-OF-THOUGHT REASONING:**
 
-  **STEP 1: Eligibility Check**
-  - Age requirement: ≥ 18 years
-  - Credit score requirement: ≥ 650
-  - If FAIL: {{"approved": false, "eligibility_passed": false, "reason": "underage" OR "credit_score_below_minimum"}}
+  **STEP 1: ELIGIBILITY CHECK**
+  - Age requirement: ≥ 18 years (regulatory compliance)
+  - Credit score requirement: ≥ 650 (minimum creditworthiness)
+  - Income requirement: ≥ $50,000 (debt service capability)
+  - Employment status: Not unemployed (income stability)
+  - If FAIL: Stop processing, return rejection
   - If PASS: Continue to Step 2
 
-  **STEP 2: Risk Assessment** (only if eligible)
+  **STEP 2: RISK ASSESSMENT** (only if eligible)
   - Analyze debt-to-income ratio and bankruptcy history
   - HIGH RISK triggers: debt_to_income_ratio > 0.4 OR previous_bankruptcies > 0
-  - If HIGH RISK: {{"approved": false, "risk_level": "high", "manager_review_required": true, "eligibility_passed": true, "escalation_reason": [reason]}}
+  - CONDITIONAL APPROVAL: Credit 620-649 with compensating factors
+  - If HIGH RISK: Escalate to manager review
+  - If CONDITIONAL: Special approval with conditions
   - If LOW RISK: Continue to Step 3
 
-  **STEP 3: Final Approval** (only if eligible + low risk)
+  **STEP 3: FINAL APPROVAL** (only if eligible + low risk)
   - Automatic approval for qualified applications
-  - Result: {{"approved": true, "approval_level": "standard", "risk_level": "low", "manager_review_required": false, "eligibility_passed": true}}
+  - Standard approval terms apply
 
-  **Escalation Reasons**:
-  - "high_debt_ratio_and_bankruptcy_history" (both conditions)
-  - "high_debt_ratio" (DTI > 0.4 only)
-  - "bankruptcy_history" (bankruptcies > 0 only)
+  **FEW-SHOT EXAMPLES WITH CHAIN-OF-THOUGHT REASONING:**
 
-  **Workflow Logic**:
-  1. Start with eligibility - if fail, stop immediately
-  2. If eligible, assess risk - if high risk, escalate to manager
-  3. If low risk, proceed to final approval
+  **Example 1: Full Approval Pipeline - Standard Approval**
+  Customer: Age 30, Credit 700, Income $75K, Employment "Full-time", DTI 0.3, Bankruptcies 0
+  
+  Chain-of-thought:
+  1. Step 1 - Eligibility: Age 30 ≥ 18 ✓, Credit 700 ≥ 650 ✓, Income $75K ≥ $50K ✓, Employed ✓ → PASS
+  2. Step 2 - Risk Assessment: DTI 0.3 ≤ 0.4 ✓, Bankruptcies 0 ≤ 0 ✓ → LOW RISK
+  3. Step 3 - Final Approval: All criteria met → APPROVE
+  4. Decision: Standard approval
+  
+  Output: {{"approved": true, "approval_level": "standard", "risk_level": "low", "manager_review_required": false, "eligibility_passed": true}}
 
-  **Response Requirements**:
-  Always include:
-  - "approved": true/false
-  - "eligibility_passed": true/false
-  - Additional fields based on workflow outcome
+  **Example 2: Manager Review Required - High Risk**
+  Customer: Age 35, Credit 680, Income $85K, Employment "Full-time", DTI 0.45, Bankruptcies 1
+  
+  Chain-of-thought:
+  1. Step 1 - Eligibility: Age 35 ≥ 18 ✓, Credit 680 ≥ 650 ✓, Income $85K ≥ $50K ✓, Employed ✓ → PASS
+  2. Step 2 - Risk Assessment: DTI 0.45 > 0.4 ✗ AND Bankruptcies 1 > 0 ✗ → HIGH RISK (both conditions)
+  3. Decision: Escalate to manager review
+  
+  Output: {{"approved": false, "risk_level": "high", "manager_review_required": true, "eligibility_passed": true, "escalation_reason": "high_debt_ratio_and_bankruptcy_history"}}
 
-  **Instructions**: Process the application through each workflow step systematically. Stop at the first failure point. Respond with ONLY valid JSON. 
+  **Example 3: Early Rejection - Credit Score Below Minimum**
+  Customer: Age 25, Credit 620, Income $60K, Employment "Full-time", DTI 0.25, Bankruptcies 0
+  
+  Chain-of-thought:
+  1. Step 1 - Eligibility: Age 25 ≥ 18 ✓, Credit 620 < 650 ✗ → FAIL (credit score below minimum)
+  2. Decision: Early rejection, no further processing
+  
+  Output: {{"approved": false, "eligibility_passed": false, "reason": "credit_score_below_minimum"}}
+
+  **Example 4: Conditional Approval - Borderline Case**
+  Customer: Age 28, Credit 630, Income $70K, Employment "Full-time", DTI 0.32, Bankruptcies 0, Employment_years 5, Collateral_offered true
+  
+  Chain-of-thought:
+  1. Step 1 - Eligibility: Age 28 ≥ 18 ✓, Credit 630 < 650 ✗ → Normally FAIL, but check compensating factors
+  2. Compensating factors: Employment_years 5 ≥ 5 ✓, Collateral_offered true ✓, DTI 0.32 ≤ 0.35 ✓
+  3. Step 2 - Risk Assessment: Credit 620-649 with compensating factors → CONDITIONAL
+  4. Decision: Conditional approval with special terms
+  
+  Output: {{"approved": true, "approval_type": "conditional", "risk_level": "medium", "manager_review_required": false, "eligibility_passed": true, "conditions": ["Additional documentation required", "Periodic review every 6 months"]}}
+
+  **Example 5: Underage Rejection**
+  Customer: Age 17, Credit 750, Income $80K, Employment "Full-time", DTI 0.2, Bankruptcies 0
+  
+  Chain-of-thought:
+  1. Step 1 - Eligibility: Age 17 < 18 ✗ → FAIL (underage, regulatory requirement)
+  2. Decision: Regulatory failure, no further processing
+  
+  Output: {{"approved": false, "eligibility_passed": false, "reason": "underage"}}
+
+  **Example 6: High Debt Ratio Only - Manager Review**
+  Customer: Age 40, Credit 720, Income $90K, Employment "Full-time", DTI 0.42, Bankruptcies 0
+  
+  Chain-of-thought:
+  1. Step 1 - Eligibility: Age 40 ≥ 18 ✓, Credit 720 ≥ 650 ✓, Income $90K ≥ $50K ✓, Employed ✓ → PASS
+  2. Step 2 - Risk Assessment: DTI 0.42 > 0.4 ✗, Bankruptcies 0 ≤ 0 ✓ → HIGH RISK (debt ratio only)
+  3. Decision: Escalate to manager review
+  
+  Output: {{"approved": false, "risk_level": "high", "manager_review_required": true, "eligibility_passed": true, "escalation_reason": "high_debt_ratio"}}
+
+  **Example 7: Bankruptcy History Only - Manager Review**
+  Customer: Age 45, Credit 680, Income $95K, Employment "Full-time", DTI 0.35, Bankruptcies 1
+  
+  Chain-of-thought:
+  1. Step 1 - Eligibility: Age 45 ≥ 18 ✓, Credit 680 ≥ 650 ✓, Income $95K ≥ $50K ✓, Employed ✓ → PASS
+  2. Step 2 - Risk Assessment: DTI 0.35 ≤ 0.4 ✓, Bankruptcies 1 > 0 ✗ → HIGH RISK (bankruptcy only)
+  3. Decision: Escalate to manager review
+  
+  Output: {{"approved": false, "risk_level": "high", "manager_review_required": true, "eligibility_passed": true, "escalation_reason": "bankruptcy_history"}}
+
+  **REQUIRED OUTPUT FORMAT (STRICT JSON PARSING):**
+  
+  CRITICAL: Your response must be EXACTLY one of these JSON formats with no additional text:
+
+  For standard approval:
+  {{"approved": true, "approval_level": "standard", "risk_level": "low", "manager_review_required": false, "eligibility_passed": true}}
+
+  For conditional approval:
+  {{"approved": true, "approval_type": "conditional", "risk_level": "medium", "manager_review_required": false, "eligibility_passed": true, "conditions": ["Additional documentation required", "Periodic review every 6 months"]}}
+
+  For manager review (high risk):
+  {{"approved": false, "risk_level": "high", "manager_review_required": true, "eligibility_passed": true, "escalation_reason": "high_debt_ratio_and_bankruptcy_history"}}
+  {{"approved": false, "risk_level": "high", "manager_review_required": true, "eligibility_passed": true, "escalation_reason": "high_debt_ratio"}}
+  {{"approved": false, "risk_level": "high", "manager_review_required": true, "eligibility_passed": true, "escalation_reason": "bankruptcy_history"}}
+
+  For eligibility failure:
+  {{"approved": false, "eligibility_passed": false, "reason": "underage"}}
+  {{"approved": false, "eligibility_passed": false, "reason": "credit_score_below_minimum"}}
+  {{"approved": false, "eligibility_passed": false, "reason": "income_too_low"}}
+  {{"approved": false, "eligibility_passed": false, "reason": "unemployed"}}
+
+  For comprehensive rejection:
+  {{"approved": false, "eligibility_passed": false, "reason": "high_risk_profile"}}
+  {{"approved": false, "eligibility_passed": false, "reason": "insufficient_compensating_factors"}}
+
+  **PARSING ROBUSTNESS INSTRUCTIONS:**
+  1. Use double quotes for all JSON keys and string values
+  2. Use exact boolean values: true, false (not "true", "false")
+  3. Use exact string values: "standard", "conditional" for approval_level/approval_type
+  4. Use exact string values: "low", "medium", "high" for risk_level
+  5. Use exact string values for escalation_reason: "high_debt_ratio_and_bankruptcy_history", "high_debt_ratio", "bankruptcy_history"
+  6. Use exact string values for reason: "underage", "credit_score_below_minimum", "income_too_low", "unemployed", "high_risk_profile", "insufficient_compensating_factors"
+  7. Include all required fields for each output type
+  8. Do not include any explanatory text before or after the JSON
+  9. Do not include any markdown formatting or code blocks
+  10. Ensure the JSON is valid and parseable
+  11. Follow the chain-of-thought reasoning internally but output ONLY the final JSON decision
+  12. Always include "approved" and "eligibility_passed" fields in every response
+  13. Process workflow steps in sequence: eligibility → risk assessment → final approval 

@@ -1,0 +1,90 @@
+================================================================================
+TEST CASE: 002_credit_score_threshold
+================================================================================
+
+Description: Reject application due to insufficient credit score
+Category: risk_assessment
+Difficulty: simple
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**LOAN APPROVAL POLICY - FIRST NATIONAL BANK**
+
+As part of our regulatory compliance and risk management framework, we need to implement 
+an automated loan approval system that evaluates applicant eligibility based on multiple 
+factors including age, credit worthiness, income stability, and financial history.
+
+**REGULATORY REQUIREMENTS:**
+- All loan applicants must be at least 18 years of age (federal banking regulation)
+- Applicants must be US citizens or permanent residents
+- Unemployed applicants are not eligible for unsecured loans
+- Applicants over 75 years old require special review processes
+
+**APPROVAL CRITERIA:**
+Our bank offers three tiers of approval:
+
+1. **Premium Tier**: For our most qualified customers
+   - Credit score 750 or higher
+   - Annual income $100,000 or more
+   - Debt-to-income ratio below 30%
+   - No bankruptcy history
+   - Credit limit up to $75,000 at 3.5% APR
+
+2. **Standard Tier**: For qualified customers
+   - Credit score 650 or higher
+   - Annual income $50,000 or more
+   - At least 2 years employment history OR income above $75,000
+   - No more than 1 bankruptcy in history
+   - Debt-to-income ratio below 40%
+   - Credit limit up to $50,000 at 4.5% APR
+
+3. **Basic Tier**: For entry-level customers
+   - Credit score 620 or higher
+   - Annual income $40,000 or more
+   - At least 3 years employment history
+   - No bankruptcy history
+   - Debt-to-income ratio below 35%
+   - Credit limit up to $25,000 at 5.5% APR
+
+**AUTOMATIC REJECTION CRITERIA:**
+- Credit score below 620
+- Annual income below $40,000
+- Multiple bankruptcies (more than 1)
+- High debt-to-income ratio (>40%) combined with bankruptcy history
+- Less than 2 years employment with income below $60,000
+
+Please process the following loan application and provide your decision with reasoning.
+
+CUSTOMER APPLICATION DATA:
+----------------------------------------
+Application Type: Personal Loan
+
+Financial Info:
+  annual_income: 75000
+  credit_score: 620
+  debt_to_income_ratio: 0.25
+  employment_years: 3
+  previous_bankruptcies: 0
+
+Personal Info:
+  age: 28
+  citizenship_status: citizen
+  employment_status: employed
+Requested Amount: 25000
+
+EXPECTED SYSTEM DECISION:
+----------------------------------------
+  approved: True
+  credit_limit: 25000
+  eligible: True
+  interest_rate: 0.055
+  screening_passed: True
+  tier: basic
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+Applicant meets age requirement (28 >= 18) and has good income and employment,
+but credit score of 620 is below the minimum threshold of 650.
+
+
+================================================================================

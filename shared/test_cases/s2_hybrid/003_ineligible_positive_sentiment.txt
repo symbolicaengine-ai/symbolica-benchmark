@@ -1,0 +1,78 @@
+================================================================================
+TEST CASE: 003_ineligible_positive_sentiment
+================================================================================
+
+Description: Reject ineligible customer despite positive sentiment
+Category: hybrid_rejection
+Difficulty: medium
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**HYBRID LOAN APPROVAL SYSTEM - CUSTOMER EXPERIENCE ENHANCEMENT**
+
+**BACKGROUND:**
+Our bank has implemented a hybrid approval system that combines traditional 
+credit analysis with customer sentiment analysis to improve customer experience 
+and identify our most satisfied customers for expedited processing.
+
+**BUSINESS REQUIREMENT:**
+We want to offer **expedited approval processing** (24-hour turnaround instead of 
+5-7 business days) for customers who meet both criteria:
+
+1. **Basic Financial Eligibility:**
+   - Age 18 or older
+   - Credit score 600 or higher
+   - Annual income $30,000 or higher
+   - Not currently unemployed
+
+2. **Positive Customer Sentiment:**
+   - Customer feedback or communication expresses positive sentiment about our bank
+   - Examples: excitement about loan opportunity, trust in our services, 
+     satisfaction with previous interactions, optimism about working with us
+
+**PROCESSING RULES:**
+- If customer meets financial eligibility AND expresses positive sentiment 
+  → Approve with "expedited" processing
+- If customer meets financial eligibility BUT expresses negative sentiment 
+  → Approve with "standard" processing (may require additional review)
+- If customer does NOT meet financial eligibility, regardless of sentiment 
+  → Reject with appropriate reason
+
+**SENTIMENT ANALYSIS GUIDANCE:**
+Look for language that indicates:
+- **Positive**: excited, happy, trust, amazing, wonderful, great experience, 
+  satisfied, confident, optimistic, grateful
+- **Negative**: frustrated, disappointed, concerned, worried, upset, angry, 
+  dissatisfied, reluctant, skeptical
+- **Neutral**: factual statements without emotional language
+
+Please analyze the following customer application and determine the appropriate 
+approval decision and processing type.
+
+CUSTOMER APPLICATION DATA:
+----------------------------------------
+Application Feedback: I absolutely love your bank! You've been so helpful and I'm confident this loan will change my life for the better. Thank you so much!
+Application Type: Personal Loan
+
+Financial Info:
+  annual_income: 40000
+  credit_score: 580
+
+Personal Info:
+  age: 25
+  employment_status: employed
+Requested Amount: 25000
+
+EXPECTED SYSTEM DECISION:
+----------------------------------------
+  approved: False
+  reason: credit_score_too_low
+  sentiment: positive
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+Despite very positive sentiment ("love", "helpful", "confident", "thank you"),
+credit score of 580 is below minimum threshold of 600.
+
+
+================================================================================

@@ -1,45 +1,151 @@
 metadata:
   name: "S3 Temporal Fraud Detection Prompt"
-  description: "Specialized prompt for temporal pattern analysis and fraud detection"
-  version: "1.0"
+  description: "Enhanced prompt for temporal pattern analysis and fraud detection with chain-of-thought reasoning"
+  version: "2.0"
   author: "Symbolica Benchmark Team"
   
 template: |
-  You are an advanced fraud detection system that analyzes temporal patterns and geographic data to identify suspicious activity.
+  You are an advanced fraud detection system that analyzes temporal patterns and geographic data to identify suspicious activity. Your task is to detect fraudulent behavior through systematic analysis of transaction patterns, timing, and geographic feasibility.
 
-  **Scenario**: {scenario}
+  **FRAUD DETECTION SCENARIO:**
+  {scenario}
 
-  **Transaction Data**:
+  **TRANSACTION DATA:**
   {facts_formatted}
 
-  **Fraud Detection Rules**:
+  **FRAUD DETECTION RULES WITH CHAIN-OF-THOUGHT REASONING:**
   
-  1. **Sustained High Spending Pattern**:
-     - Multiple transactions (≥5) significantly above normal in short time
-     - Look for: recent_transactions with values >200 when average is ~85
-     - Time window: ≤60 minutes
-     - Result: {{"fraud_alert": true, "alert_level": "high", "pattern": "sustained_high_spending"}}
-  
-  2. **Impossible Geographic Velocity**:
+  1. **IMPOSSIBLE GEOGRAPHIC VELOCITY** (Critical Priority):
      - Transactions in distant locations within impossible timeframe
      - Look for: distances >1000 miles in <6 hours
-     - Example: NYC to LA (2445 miles) in 1.5 hours is impossible
+     - Physical impossibility: Human travel speed limitations
      - Result: {{"fraud_alert": true, "alert_level": "critical", "pattern": "impossible_velocity"}}
   
-  3. **Normal Activity Pattern**:
+  2. **SUSTAINED HIGH SPENDING PATTERN** (High Priority):
+     - Multiple transactions (≥5) significantly above normal in short time
+     - Look for: recent_transactions with values >$200 when average is ~$85
+     - Time window: ≤60 minutes indicates compromise
+     - Result: {{"fraud_alert": true, "alert_level": "high", "pattern": "sustained_high_spending"}}
+  
+  3. **GRADUAL ESCALATION PATTERN** (High Priority):
+     - Transaction amounts escalating dramatically over time
+     - Look for: max transaction >7x average AND >$400
+     - Pattern: Testing limits before major fraud attempt
+     - Result: {{"fraud_alert": true, "alert_level": "high", "pattern": "gradual_escalation"}}
+  
+  4. **MODERATE RISK PATTERN** (Medium Priority):
+     - Unusual but not impossible patterns
+     - Look for: amounts 3-7x average, compressed timeframes
+     - Result: {{"fraud_alert": true, "alert_level": "medium", "pattern": "moderate_risk"}}
+  
+  5. **NORMAL ACTIVITY PATTERN** (No Alert):
      - Transactions within normal range and reasonable geography
      - Look for: amounts close to average, reasonable time/location spread
-     - Result: {{"fraud_alert": false, "pattern": "normal"}}
+     - Result: {{"fraud_alert": false, "alert_level": "none", "pattern": "normal"}}
 
-  **Analysis Process**:
-  1. Examine transaction amounts vs. customer's average
-  2. Check time windows between transactions
-  3. Analyze geographic locations and travel feasibility
-  4. Identify any impossible or highly suspicious patterns
+  **FEW-SHOT EXAMPLES WITH CHAIN-OF-THOUGHT REASONING:**
 
-  **Response Format**:
-  - "fraud_alert": true/false
-  - "alert_level": "critical"/"high"/"medium"/"low" (if fraud detected)
-  - "pattern": "sustained_high_spending"/"impossible_velocity"/"normal"
+  **Example 1: Impossible Velocity Fraud - Critical Alert**
+  Data: Customer in NYC at 10:00 AM, then Los Angeles at 11:30 AM (distance: 2,445 miles, time: 1.5 hours)
+  
+  Chain-of-thought:
+  1. Geographic analysis: NYC to LA = 2,445 miles
+  2. Time analysis: 1.5 hours between transactions
+  3. Velocity calculation: 2,445 miles ÷ 1.5 hours = 1,630 mph
+  4. Feasibility check: Commercial flight max ~600 mph, physically impossible
+  5. Pattern identification: Impossible velocity (distance > 1000 miles, time < 6 hours)
+  6. Decision: Critical fraud alert
+  
+  Output: {{"fraud_alert": true, "alert_level": "critical", "pattern": "impossible_velocity"}}
 
-  **Instructions**: Analyze the temporal and geographic patterns carefully. Apply fraud detection logic systematically. Respond with ONLY valid JSON. 
+  **Example 2: Sustained High Spending - High Alert**
+  Data: Customer average $85, recent transactions: [$250, $275, $300, $280, $325] within 45 minutes
+  
+  Chain-of-thought:
+  1. Transaction count: 5 transactions ≥ 5 ✓
+  2. Amount analysis: All transactions > $200 (minimum $250 > $200) ✓
+  3. Average comparison: $250-$325 vs $85 average = 3-4x higher ✓
+  4. Time window: 45 minutes ≤ 60 minutes ✓
+  5. Pattern identification: Sustained high spending pattern
+  6. Decision: High fraud alert
+  
+  Output: {{"fraud_alert": true, "alert_level": "high", "pattern": "sustained_high_spending"}}
+
+  **Example 3: Gradual Escalation - High Alert**
+  Data: Customer average $60, recent transactions: [$75, $120, $180, $250, $320, $450] over 2 hours
+  
+  Chain-of-thought:
+  1. Transaction count: 6 transactions ≥ 6 ✓
+  2. Maximum transaction: $450 > $400 ✓
+  3. Average comparison: $450 ÷ $60 = 7.5x (>7x) ✓
+  4. Escalation pattern: $75 → $120 → $180 → $250 → $320 → $450 (clear escalation)
+  5. Pattern identification: Gradual escalation (testing limits)
+  6. Decision: High fraud alert
+  
+  Output: {{"fraud_alert": true, "alert_level": "high", "pattern": "gradual_escalation"}}
+
+  **Example 4: Moderate Risk Pattern - Medium Alert**
+  Data: Customer average $90, recent transactions: [$280, $320, $300] within 75 minutes
+  
+  Chain-of-thought:
+  1. Transaction count: 3 transactions (< 5 for sustained high)
+  2. Amount analysis: $280-$320 vs $90 average = 3.1-3.6x higher
+  3. Time window: 75 minutes (> 60 minutes for sustained high)
+  4. Pattern assessment: Elevated but not extreme, doesn't meet high-risk criteria
+  5. Pattern identification: Moderate risk pattern
+  6. Decision: Medium fraud alert
+  
+  Output: {{"fraud_alert": true, "alert_level": "medium", "pattern": "moderate_risk"}}
+
+  **Example 5: Normal Activity - No Alert**
+  Data: Customer average $85, recent transactions: [$75, $95, $80, $110, $70] over 3 hours
+  
+  Chain-of-thought:
+  1. Amount analysis: $70-$110 vs $85 average = 0.8-1.3x (within 1.5x range)
+  2. Time window: 3 hours = 180 minutes (≥ 120 minutes for normal)
+  3. Pattern assessment: All amounts within reasonable range
+  4. Geographic feasibility: No impossible travel detected
+  5. Pattern identification: Normal spending pattern
+  6. Decision: No fraud alert
+  
+  Output: {{"fraud_alert": false, "alert_level": "none", "pattern": "normal"}}
+
+  **Example 6: Edge Case - Exactly 1000 Miles in 6 Hours**
+  Data: Customer in Chicago at 2:00 PM, then Dallas at 8:00 PM (distance: 1,000 miles, time: 6 hours)
+  
+  Chain-of-thought:
+  1. Geographic analysis: Chicago to Dallas = 1,000 miles
+  2. Time analysis: 6 hours between transactions
+  3. Velocity calculation: 1,000 miles ÷ 6 hours = 167 mph
+  4. Feasibility check: Commercial flight possible (~2.5 hours) + travel time
+  5. Threshold check: 1,000 miles = threshold, 6 hours = threshold (not > 1000 miles AND < 6 hours)
+  6. Pattern identification: Borderline but feasible
+  7. Decision: Not impossible velocity, assess other patterns
+  
+  Output: {{"fraud_alert": false, "alert_level": "none", "pattern": "normal"}}
+
+  **REQUIRED OUTPUT FORMAT (STRICT JSON PARSING):**
+  
+  CRITICAL: Your response must be EXACTLY one of these JSON formats with no additional text:
+
+  For fraud detected:
+  {{"fraud_alert": true, "alert_level": "critical", "pattern": "impossible_velocity"}}
+  {{"fraud_alert": true, "alert_level": "high", "pattern": "sustained_high_spending"}}
+  {{"fraud_alert": true, "alert_level": "high", "pattern": "gradual_escalation"}}
+  {{"fraud_alert": true, "alert_level": "medium", "pattern": "moderate_risk"}}
+
+  For normal activity:
+  {{"fraud_alert": false, "alert_level": "none", "pattern": "normal"}}
+
+  **PARSING ROBUSTNESS INSTRUCTIONS:**
+  1. Use double quotes for all JSON keys and string values
+  2. Use exact boolean values: true, false (not "true", "false")
+  3. Use exact string values: "critical", "high", "medium", "none" for alert_level
+  4. Use exact string values: "impossible_velocity", "sustained_high_spending", "gradual_escalation", "moderate_risk", "normal" for pattern
+  5. Include all required fields for each output type
+  6. Do not include any explanatory text before or after the JSON
+  7. Do not include any markdown formatting or code blocks
+  8. Ensure the JSON is valid and parseable
+  9. Follow the chain-of-thought reasoning internally but output ONLY the final JSON decision
+  10. Always include "fraud_alert", "alert_level", and "pattern" fields in every response
+  11. Use systematic analysis: check impossible velocity first, then sustained high spending, then escalation, then moderate risk, finally normal 

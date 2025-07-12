@@ -1,0 +1,145 @@
+================================================================================
+TEST CASE: 001_full_approval_pipeline
+================================================================================
+
+Description: Process multiple applications through full approval pipeline
+Category: workflow_approval
+Difficulty: medium
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**MULTI-STEP LOAN APPROVAL WORKFLOW**
+
+**BACKGROUND:**
+Our bank implements a systematic multi-step workflow for loan approvals that ensures 
+comprehensive risk assessment while maintaining efficient processing for qualified 
+applicants. Each application must pass through sequential steps with specific 
+criteria at each stage.
+
+**WORKFLOW PROCESS:**
+
+**STEP 1: ELIGIBILITY SCREENING**
+- Age requirement: 18 years or older (regulatory compliance)
+- Credit score requirement: 650 or higher (creditworthiness threshold)
+- Income requirement: $50,000 or higher (debt service capability)
+- Employment status: Must be employed (income stability)
+- If any criterion fails → Immediate rejection with specific reason
+- If all criteria pass → Continue to Step 2
+
+**STEP 2: RISK ASSESSMENT**
+- Analyze debt-to-income ratio and bankruptcy history
+- **HIGH RISK TRIGGERS:**
+  - Debt-to-income ratio > 40%
+  - Previous bankruptcies > 0
+- If HIGH RISK → Escalate to manager review (no automatic approval)
+- If LOW RISK → Continue to Step 3
+
+**STEP 3: FINAL APPROVAL**
+- Applications that pass eligibility and risk assessment
+- Receive automatic standard approval
+- No additional review required
+
+**ESCALATION REASONS:**
+- "high_debt_ratio_and_bankruptcy_history" (both conditions present)
+- "high_debt_ratio" (DTI > 40% only)
+- "bankruptcy_history" (previous bankruptcies > 0 only)
+
+**DECISION OUTCOMES:**
+- Standard approval: All criteria met, low risk profile
+- Manager review: Eligible but high risk factors present
+- Rejection: Failed eligibility screening
+
+Please process the following loan applications through the complete workflow.
+
+CUSTOMER APPLICATION DATA (MULTIPLE RECORDS):
+----------------------------------------
+
+Record 1:
+  age: 30
+  credit_score: 700
+  annual_income: 75000
+  employment_status: Full-time
+  debt_to_income_ratio: 0.3
+  previous_bankruptcies: 0
+  Application Type: Personal Loan
+  Requested Amount: 30000
+
+Record 2:
+  age: 28
+  credit_score: 720
+  annual_income: 85000
+  employment_status: Full-time
+  debt_to_income_ratio: 0.25
+  previous_bankruptcies: 0
+  Application Type: Personal Loan
+  Requested Amount: 35000
+
+Record 3:
+  age: 35
+  credit_score: 680
+  annual_income: 62000
+  employment_status: Full-time
+  debt_to_income_ratio: 0.35
+  previous_bankruptcies: 0
+  Application Type: Personal Loan
+  Requested Amount: 25000
+
+Record 4:
+  age: 32
+  credit_score: 710
+  annual_income: 78000
+  employment_status: Full-time
+  debt_to_income_ratio: 0.28
+  previous_bankruptcies: 0
+  Application Type: Personal Loan
+  Requested Amount: 32000
+
+Record 5:
+  age: 29
+  credit_score: 690
+  annual_income: 68000
+  employment_status: Full-time
+  debt_to_income_ratio: 0.33
+  previous_bankruptcies: 0
+  Application Type: Personal Loan
+  Requested Amount: 28000
+
+EXPECTED SYSTEM DECISION (ALL RECORDS):
+----------------------------------------
+  approved: True
+  approval_level: standard
+  risk_level: low
+  manager_review_required: False
+  eligibility_passed: True
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+All 5 customer records successfully pass through the complete 3-step workflow:
+
+**Step 1 - Eligibility (ALL PASS):**
+- All ages 28-35 ≥ 18 ✓
+- All credit scores 680-720 ≥ 650 ✓  
+- All incomes $62,000-$85,000 ≥ $50,000 ✓
+- All employed full-time ✓
+
+**Step 2 - Risk Assessment (ALL LOW RISK):**
+- All debt-to-income ratios 0.25-0.35 ≤ 0.40 ✓
+- All have 0 previous bankruptcies ✓
+
+**Step 3 - Final Approval (ALL QUALIFY):**
+- All applications meet standard approval criteria
+- No manager review required
+- Automatic approval granted
+
+Despite varying credit scores, income levels, and debt ratios, all customers 
+consistently fall within acceptable ranges for standard approval.
+
+CONSISTENCY TEST HYPOTHESIS:
+----------------------------------------
+Symbolica should deterministically approve all 5 records with identical "standard" 
+approval decisions. LLMs might show inconsistency in multi-step processing, 
+potentially failing to properly sequence the workflow steps or being influenced 
+by minor variations in profiles to incorrectly escalate some applications for 
+manager review.
+
+================================================================================

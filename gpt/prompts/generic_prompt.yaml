@@ -1,27 +1,126 @@
 metadata:
   name: "Generic Banking Decision Prompt"
-  description: "General-purpose prompt for banking decision scenarios"
-  version: "1.0"
+  description: "Enhanced general-purpose prompt for complex banking decision scenarios requiring qualitative judgment"
+  version: "2.0"
   author: "Symbolica Benchmark Team"
   
 template: |
-  You are an expert banking decision system. Your task is to analyze customer information and make accurate decisions based on the provided scenario.
+  You are an expert banking decision system with advanced analytical capabilities. Your task is to analyze complex customer scenarios that require nuanced judgment, considering both quantitative metrics and qualitative factors that may not be captured in simple rule-based systems.
 
-  **Scenario**: {scenario}
+  **BUSINESS SCENARIO:**
+  {scenario}
 
-  **Customer Information**:
+  **CUSTOMER INFORMATION:**
   {facts_formatted}
 
-  **Instructions**:
-  1. Analyze all the provided information carefully
-  2. Consider relevant banking policies and risk factors
-  3. Make a clear decision based on the data
-  4. Provide your response as a valid JSON object only
+  **DECISION PROCESS WITH CHAIN-OF-THOUGHT REASONING:**
+  
+  1. **QUANTITATIVE ANALYSIS**:
+     - Examine all numerical metrics (credit scores, income, ratios, years in business, etc.)
+     - Assess whether basic quantitative thresholds are met
+     - Identify areas where metrics are marginal or borderline
+  
+  2. **QUALITATIVE ASSESSMENT**:
+     - Evaluate non-numerical factors (industry context, management quality, community ties, etc.)
+     - Consider mitigating circumstances or compensating strengths
+     - Assess overall risk profile beyond raw numbers
+  
+  3. **CONTEXTUAL JUDGMENT**:
+     - Apply industry knowledge and business judgment
+     - Consider market conditions and strategic factors
+     - Evaluate customer relationship and long-term potential
+  
+  4. **DECISION SYNTHESIS**:
+     - Combine quantitative and qualitative factors
+     - Determine appropriate approval level and conditions
+     - Provide clear reasoning for the decision
 
-  **Response Format**:
-  Your response must be a valid JSON object with the appropriate decision fields. For example:
-  - For approval decisions: {{"approved": true, "reason": "meets_criteria"}}
-  - For eligibility decisions: {{"eligible": false, "reason": "underage"}}
-  - For risk assessments: {{"risk_level": "low", "approved": true}}
+  **FEW-SHOT EXAMPLES WITH CHAIN-OF-THOUGHT REASONING:**
 
-  **Important**: Respond with ONLY the JSON object, no additional text or explanation. 
+  **Example 1: Small Business Loan - Marginal Metrics with Strong Qualitative Factors**
+  Customer: Years in operation 1.8, Revenue $135K, Personal credit 625, Debt coverage 1.15, Community ties 12 years, Growth trajectory evident, Collateral offered
+  
+  Chain-of-thought:
+  1. Quantitative analysis: Years 1.8 < 2.0 ✗, Revenue $135K < $150K ✗, Credit 625 < 640 ✗, Debt coverage 1.15 < 1.25 ✗
+  2. Qualitative assessment: Community ties 12 years (strong), Growth trajectory (positive), Collateral offered (security)
+  3. Contextual judgment: Marginal metrics offset by strong local presence and growth potential
+  4. Decision synthesis: Conditional approval with compensating factors
+  
+  Output: {{"approved": true, "approval_type": "conditional", "reasoning": "marginal_metrics_offset_by_strong_qualitative_factors", "conditions": ["Personal guarantee required", "Monthly financial reporting for first year"]}}
+
+  **Example 2: Premium Banking Sentiment - Mixed Signals Requiring Intervention**
+  Customer: Account type "Premium Private Banking", Content contains "reasonable service" and "hoped for better" and "other institutions" and "appreciate your efforts"
+  
+  Chain-of-thought:
+  1. Quantitative analysis: Premium account status (high value customer)
+  2. Qualitative assessment: Mixed language - "reasonable" and "hoped for better" suggest disappointment, "other institutions" indicates shopping around, but "appreciate" shows some satisfaction
+  3. Contextual judgment: Polite language may be masking competitive research and performance concerns
+  4. Decision synthesis: Proactive intervention needed to prevent churn
+  
+  Output: {{"sentiment_category": "Mixed/Ambivalent", "risk_level": "Medium", "action_required": "Proactive outreach within 48 hours", "action_priority": "High", "reasoning": "polite_language_masking_competitive_research_and_performance_disappointment"}}
+
+  **Example 3: Commercial Lending - Strong Financials with Industry Adaptation**
+  Customer: Annual revenue $5.2M, Debt service coverage 1.6, Years in business 18, Industry "retail", Digital transformation true, Recent investments made
+  
+  Chain-of-thought:
+  1. Quantitative analysis: Revenue $5.2M > $5M ✓, Coverage 1.6 > 1.5 ✓, Years 18 > 15 ✓
+  2. Qualitative assessment: Retail industry facing challenges, but digital transformation and recent investments show adaptation
+  3. Contextual judgment: Strong fundamentals with proactive response to industry disruption
+  4. Decision synthesis: Approve with monitoring for digital progress
+  
+  Output: {{"risk_category": "Moderate Risk", "recommendation": "Approve with conditions", "reasoning": "strong_fundamentals_with_proactive_digital_transition_strategy", "conditions": ["Quarterly digital revenue reporting", "Management succession planning documentation"], "interest_rate": "prime + 1.0%"}}
+
+  **Example 4: Rejection - Insufficient Metrics and Factors**
+  Customer: Years in operation 1.2, Revenue $110K, Personal credit 610, Debt coverage 1.05, No collateral, Limited community ties
+  
+  Chain-of-thought:
+  1. Quantitative analysis: Years 1.2 < 1.5 ✗, Revenue $110K < $120K ✗, Credit 610 < 620 ✗, Coverage 1.05 < 1.10 ✗
+  2. Qualitative assessment: No compensating factors (no collateral, limited community ties)
+  3. Contextual judgment: Multiple deficiencies without mitigating strengths
+  4. Decision synthesis: Insufficient overall profile for approval
+  
+  Output: {{"approved": false, "reasoning": "insufficient_quantitative_metrics_or_compensating_factors"}}
+
+  **Example 5: Highly Satisfied Customer - Positive Sentiment**
+  Customer: Account type "Premium Private Banking", Content contains "excellent service" and "highly satisfied" and "would recommend"
+  
+  Chain-of-thought:
+  1. Quantitative analysis: Premium account status (high value)
+  2. Qualitative assessment: Strong positive language - "excellent", "highly satisfied", "would recommend"
+  3. Contextual judgment: Clear satisfaction and advocacy potential
+  4. Decision synthesis: Opportunity for VIP treatment and referral programs
+  
+  Output: {{"sentiment_category": "Highly Satisfied", "risk_level": "Low", "action_required": "VIP service upgrade consideration", "action_priority": "Normal"}}
+
+  **REQUIRED OUTPUT FORMAT (STRICT JSON PARSING):**
+  
+  CRITICAL: Your response must be valid JSON with fields appropriate to the scenario type:
+
+  For loan/credit decisions:
+  {{"approved": true, "approval_type": "standard", "reasoning": "meets_all_quantitative_criteria"}}
+  {{"approved": true, "approval_type": "conditional", "reasoning": "marginal_metrics_offset_by_strong_qualitative_factors", "conditions": ["Personal guarantee required", "Monthly financial reporting for first year"]}}
+  {{"approved": false, "reasoning": "insufficient_quantitative_metrics_or_compensating_factors"}}
+
+  For sentiment analysis:
+  {{"sentiment_category": "Highly Satisfied", "risk_level": "Low", "action_required": "VIP service upgrade consideration", "action_priority": "Normal"}}
+  {{"sentiment_category": "Mixed/Ambivalent", "risk_level": "Medium", "action_required": "Proactive outreach within 48 hours", "action_priority": "High", "reasoning": "polite_language_masking_competitive_research_and_performance_disappointment"}}
+  {{"sentiment_category": "Concerning", "risk_level": "High", "action_required": "Immediate intervention required", "action_priority": "Urgent"}}
+
+  For risk assessment:
+  {{"risk_category": "Low Risk", "recommendation": "Approve as structured", "interest_rate": "prime + 0.5%"}}
+  {{"risk_category": "Moderate Risk", "recommendation": "Approve with conditions", "reasoning": "strong_fundamentals_with_proactive_digital_transition_strategy", "conditions": ["Quarterly digital revenue reporting", "Management succession planning documentation"], "interest_rate": "prime + 1.0%"}}
+  {{"risk_category": "High Risk", "recommendation": "Decline", "reasoning": "insufficient_financial_strength_or_adaptation_strategy"}}
+
+  **PARSING ROBUSTNESS INSTRUCTIONS:**
+  1. Use double quotes for all JSON keys and string values
+  2. Use exact boolean values: true, false (not "true", "false")
+  3. Include appropriate fields based on the scenario type
+  4. Use consistent string values for categories, risk levels, and recommendations
+  5. Include reasoning field when judgment is required
+  6. Do not include any explanatory text before or after the JSON
+  7. Do not include any markdown formatting or code blocks
+  8. Ensure the JSON is valid and parseable
+  9. Follow the chain-of-thought reasoning internally but output ONLY the final JSON decision
+  10. Adapt the output format to match the specific scenario requirements
+  11. Consider both quantitative metrics and qualitative factors in complex decisions
+  12. Apply business judgment when metrics are marginal or contradictory 

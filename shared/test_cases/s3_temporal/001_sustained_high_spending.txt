@@ -1,0 +1,123 @@
+================================================================================
+TEST CASE: 001_sustained_high_spending
+================================================================================
+
+Description: Detect fraud pattern from sustained high spending across multiple cases
+Category: fraud_detection
+Difficulty: medium
+
+BUSINESS PROBLEM STATEMENT:
+----------------------------------------
+**FRAUD DETECTION SYSTEM - TEMPORAL ANALYSIS**
+
+**BACKGROUND:**
+Our fraud detection system monitors customer transaction patterns over time to 
+identify potentially fraudulent activity. We need to analyze recent transaction 
+history and geographic patterns to determine if transactions should be flagged 
+for fraud review.
+
+**TEMPORAL ANALYSIS RULES:**
+
+1. **Sustained High Spending Pattern:**
+   - If customer has multiple high-value transactions (>$200) within a short timeframe
+   - AND transactions are significantly above their normal spending pattern
+   - AND the pattern persists with 5 or more transactions
+   - AND occurs within 60 minutes or less
+   → Flag as potential fraud
+
+2. **Geographic Velocity Pattern:**
+   - If customer makes transactions in multiple distant locations within impossible timeframes
+   - OR transactions occur in known high-risk geographic areas
+   - OR rapid movement between significantly distant locations
+   → Flag as potential fraud
+
+3. **Normal Spending Pattern:**
+   - If transactions are within normal spending ranges for the customer
+   - AND geographic patterns are consistent with customer's typical behavior
+   - AND no suspicious velocity or amount patterns
+   → Continue normal processing
+
+**ANALYSIS CRITERIA:**
+- Review transaction amounts, times, and locations
+- Compare against customer's historical spending patterns
+- Consider geographic feasibility of transaction sequence
+- Look for sudden changes in spending behavior
+
+Please analyze the following customer transaction data and determine if fraud 
+investigation is warranted.
+
+CUSTOMER APPLICATION DATA (MULTIPLE RECORDS):
+----------------------------------------
+
+Record 1:
+  Analysis Period: Last 7 days
+  Customer Id: CUST_001
+  average_transaction: 85
+  locations: []
+  recent_transactions: [250, 300, 275, 320, 290]
+  time_window_minutes: 45
+  transaction_times: []
+
+Record 2:
+  Analysis Period: Last 7 days
+  Customer Id: CUST_002
+  average_transaction: 75
+  locations: []
+  recent_transactions: [220, 260, 240, 280, 255]
+  time_window_minutes: 38
+  transaction_times: []
+
+Record 3:
+  Analysis Period: Last 7 days
+  Customer Id: CUST_003
+  average_transaction: 92
+  locations: []
+  recent_transactions: [285, 310, 295, 340, 315]
+  time_window_minutes: 52
+  transaction_times: []
+
+Record 4:
+  Analysis Period: Last 7 days
+  Customer Id: CUST_004
+  average_transaction: 68
+  locations: []
+  recent_transactions: [205, 235, 220, 250, 240]
+  time_window_minutes: 41
+  transaction_times: []
+
+Record 5:
+  Analysis Period: Last 7 days
+  Customer Id: CUST_005
+  average_transaction: 80
+  locations: []
+  recent_transactions: [270, 295, 280, 310, 285]
+  time_window_minutes: 58
+  transaction_times: []
+
+EXPECTED SYSTEM DECISION (ALL RECORDS):
+----------------------------------------
+  alert_level: high
+  fraud_alert: True
+  pattern: sustained_high_spending
+
+GROUND TRUTH EXPLANATION:
+----------------------------------------
+All 5 customer records show classic sustained high spending fraud patterns:
+- Record 1: 5 transactions ($250-$320) vs $85 average, 45 min window
+- Record 2: 5 transactions ($220-$280) vs $75 average, 38 min window  
+- Record 3: 5 transactions ($285-$340) vs $92 average, 52 min window
+- Record 4: 5 transactions ($205-$250) vs $68 average, 41 min window
+- Record 5: 5 transactions ($270-$310) vs $80 average, 58 min window
+
+All meet the criteria: ≥5 transactions >$200, significantly above customer average 
+(3-5x normal spending), and all within ≤60 minute windows. These patterns indicate 
+potential account compromise and warrant high-priority fraud investigation.
+
+CONSISTENCY TEST HYPOTHESIS:
+----------------------------------------
+Symbolica should deterministically flag all 5 records as "sustained_high_spending" 
+fraud with "high" alert level. LLMs might show inconsistency in numerical analysis, 
+potentially missing fraud patterns in cases with higher customer averages (Record 3) 
+or being influenced by absolute transaction amounts rather than relative patterns.
+
+================================================================================
